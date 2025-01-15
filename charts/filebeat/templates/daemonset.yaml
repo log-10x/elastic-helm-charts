@@ -1,4 +1,6 @@
 {{- if .Values.daemonset.enabled }}
+{{- $l1xGHInit := or .Values.l1x.github.config.enabled .Values.l1x.github.symbols.enabled -}}
+{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.imageVariant) -}}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -109,6 +111,10 @@ spec:
       - name: varrundockersock
         hostPath:
           path: /var/run/docker.sock
+    {{- if and .Values.l1x.enabled $l1xGHInit }}
+      - name: shared-git-volume
+        emptyDir: {}
+    {{- end }}
       {{- if .Values.extraVolumes | default .Values.daemonset.extraVolumes }}
 {{ toYaml ( .Values.extraVolumes | default .Values.daemonset.extraVolumes )  | indent 6 }}
       {{- end }}
@@ -116,8 +122,37 @@ spec:
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
       {{- end }}
-      {{- if .Values.extraInitContainers }}
+      {{- if or (.Values.extraInitContainers) (and .Values.l1x.enabled $l1xGHInit) }}
       initContainers:
+        {{- if and .Values.l1x.enabled $l1xGHInit }}
+        - name: l1x-git-config
+          image: ghcr.io/log-10x/github-config-fetcher:0.2.0
+          args:
+            {{- if .Values.l1x.github.config.enabled }}
+            - "--config-repo"
+            - "https://{{ .Values.l1x.github.config.token }}@github.com/{{ .Values.l1x.github.config.repo }}.git"
+            {{- if .Values.l1x.github.config.branch }}
+            - "--config-branch"
+            - "{{ .Values.l1x.github.config.branch }}"
+            {{- end }}
+            {{- end }}
+            {{- if .Values.l1x.github.symbols.enabled }}
+            - "--symbols-repo"
+            - "https://{{ .Values.l1x.github.symbols.token }}@github.com/{{ .Values.l1x.github.symbols.repo }}.git"
+            {{- if .Values.l1x.github.symbols.branch }}
+            - "--symbols-branch"
+            - "{{ .Values.l1x.github.symbols.branch }}"
+            {{- end }}
+            {{- if .Values.l1x.github.symbols.path }}
+            - "--symbols-path"
+            - "{{ .Values.l1x.github.symbols.path }}"
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: shared-git-volume
+              mountPath: /data
+        {{- end }}
+      {{- if .Values.extraInitContainers }}
       # All the other beats accept a string here while
       # filebeat accepts a valid yaml array. We're keeping
       # this as a backwards compatible change, while adding
@@ -130,9 +165,10 @@ spec:
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
       {{- end }}
+      {{- end }}
       containers:
-      - name: "filebeat"
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+      - name: "{{ .Chart.Name }}"
+        image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}"
         imagePullPolicy: "{{ .Values.imagePullPolicy }}"
         args:
         - "-e"
@@ -153,6 +189,32 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: L1X_LOG_PATH
+          value: /etc/l1x/log/
+        {{- if .Values.l1x.enabled }}
+        - name: L1X_LICENSE
+          value: "{{ .Values.l1x.license }}"
+        {{- if .Values.l1x.runtimeName }}
+        - name: L1X_RUNTIME_NAME
+          value: "{{ .Values.l1x.runtimeName }}"
+        {{- end }}
+        {{- if .Values.l1x.github.config.enabled }}
+        - name: L1X_CONFIG
+          value: "/etc/l1x/git/config"
+        {{- end }}
+        {{- if .Values.l1x.github.symbols.enabled }}
+        - name: L1X_SYMBOLS_PATH
+          value: "/etc/l1x/git/config/data/shared/symbols"
+        {{- end }}
+        - name: L1X_RUN_ARGS
+        {{- if eq $.Values.l1x.kind "optimize" }}
+          value: "@run/input/forwarder/filebeat/optimize/config.yaml @run/apps/edge/optimizer/config.yaml"
+        {{- else if eq $.Values.l1x.kind "regulate" }}
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @run/apps/edge/regulator/config.yaml"
+        {{- else if eq $.Values.l1x.kind "report" }}
+          value: "@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter/config.yaml"
+        {{- end }}
+        {{- end }}
 {{- if .Values.extraEnvs | default .Values.daemonset.extraEnvs }}
 {{ toYaml ( .Values.extraEnvs | default .Values.daemonset.extraEnvs ) | indent 8 }}
 {{- end }}
@@ -192,6 +254,10 @@ spec:
         - name: varrundockersock
           mountPath: /var/run/docker.sock
           readOnly: true
+      {{- if and .Values.l1x.enabled $l1xGHInit }}
+        - name: shared-git-volume
+          mountPath: /etc/l1x/git
+      {{- end }}
         {{- if .Values.extraVolumeMounts | default .Values.daemonset.extraVolumeMounts }}
 {{ toYaml (.Values.extraVolumeMounts | default .Values.daemonset.extraVolumeMounts ) | indent 8 }}
         {{- end }}
