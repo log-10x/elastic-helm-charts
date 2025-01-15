@@ -1,6 +1,0 @@
-.vscode
-# Helm chart automated files
-/charts/*/requirements.lock
-
-# OSx generated
-.DS_Store

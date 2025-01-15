@@ -1,5 +1,0 @@
-# https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
-
-/charts/fluent-bit/ @dor-levi
-/charts/fluent-operator/ @benjaminhuo @wanjunlei @wenchajun
-/charts/fluentd/ @dor-levi
