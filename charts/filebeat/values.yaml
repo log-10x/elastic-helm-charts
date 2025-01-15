@@ -1,6 +1,6 @@
 ---
 # L1X configuration
-# 
+#
 # NOTE - also look at filebeatConfig which is placed lower in this file,
 # as you may want to edit it for finer output control to elastic search.
 #
@@ -301,15 +301,22 @@ hostAliases: []
 #  hostnames:
 #  - "foo.local"
 #  - "bar.local"
+
 image: "ghcr.io/log-10x/log10x-filebeat"
-imageTag: "" # Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.variant }}
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
+
+# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.variant }}
+#
+imageTag: ""
+
 # Specifies the Log10x distribution used.
 # For more details, see - http://doc.log10x.com/home/install/#flavor-matrix
 #
 # jit, native
+#
 imageVariant: jit
+
 # # Only applicable for Deployment or StatefulSet
 # replicaCount: 1
 
