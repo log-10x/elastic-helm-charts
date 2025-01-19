@@ -9,6 +9,10 @@ l1x:
   #
   enabled: true
 
+  # Turns on Filebeat debug log
+  #
+  debug: false
+
   # Specify your l1x license key
   license: "NO-LICENSE"
 
@@ -128,21 +132,21 @@ daemonset:
   filebeatConfig:
     filebeat.yml: |
 
-      {{ if and .Values.l1x.enabled (ne .Values.l1x.kind "report") }}
+      {{- if and .Values.l1x.enabled (ne .Values.l1x.kind "report") }}
       filebeat.config.inputs:
         enabled: true
         path: {{ index .Values.l1x.inputs .Values.l1x.kind }}
-      {{ end }}
+      {{- end }}
 
       filebeat.inputs:
-      {{ if .Values.l1x.enabled }}
+      {{- if .Values.l1x.enabled }}
       - type: filestream
         id: l1x_internal
         paths:
           - ${L1X_LOG_PATH}/*.log
         fields:
           log_type: l1x_internal
-      {{ end }}
+      {{- end }}
       - type: container
         paths:
           - /var/log/containers/*.log
@@ -152,13 +156,11 @@ daemonset:
             matchers:
             - logs_path:
                 logs_path: "/var/log/containers/"
-
-      {{ if .Values.l1x.enabled }}
-      processors:
-      - script:
-          lang: javascript
-          file: {{ index .Values.l1x.processors .Values.l1x.kind }}
-      {{ end }}
+        {{- if .Values.l1x.enabled }}
+        - script:
+            lang: javascript
+            file: {{ index .Values.l1x.processors .Values.l1x.kind }}
+        {{- end }}
 
       output.elasticsearch:
         host: '${NODE_NAME}'
@@ -167,7 +169,7 @@ daemonset:
         password: '${ELASTICSEARCH_PASSWORD}'
         protocol: https
         ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
-        {{ if .Values.l1x.enabled }}
+        {{- if .Values.l1x.enabled }}
         indices:
         - index: "l1x_internal"
           when.equals:
@@ -175,8 +177,8 @@ daemonset:
         {{- if eq .Values.l1x.kind "optimize" }}
         - index: "l1es_dml"
           when.has_fields: ["template", "templateHash"]
-        {{ end }}
-        {{ end }}
+        {{- end }}
+        {{- end }}
 
   # Only used when updateStrategy is set to "RollingUpdate"
   maxUnavailable: 1

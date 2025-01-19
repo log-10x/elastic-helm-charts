@@ -168,12 +168,20 @@ spec:
       {{- end }}
       containers:
       - name: "{{ .Chart.Name }}"
+        {{- if .Values.l1x.debug }}
+        image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}-debug"
+        {{- else}}
         image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}"
+        {{- end }}
         imagePullPolicy: "{{ .Values.imagePullPolicy }}"
         args:
         - "-e"
         - "-E"
         - "http.enabled=true"
+        {{- if .Values.l1x.debug }}
+        - "-d"
+        - "\"*\""
+        {{- end }}
         livenessProbe:
 {{ toYaml .Values.livenessProbe | indent 10 }}
         readinessProbe:
