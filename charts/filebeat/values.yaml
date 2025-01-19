@@ -9,6 +9,10 @@ l1x:
   #
   enabled: true
 
+  # Turns on Filebeat debug log
+  #
+  debug: false
+
   # Specify your l1x license key
   license: "NO-LICENSE"
 
