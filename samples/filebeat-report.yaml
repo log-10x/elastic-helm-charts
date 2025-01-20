@@ -11,6 +11,8 @@ l1x:
 
   kind: "report"
 
+  runtimeName: "my-filebeat-reporter"
+
 daemonset:
   filebeatConfig:
     filebeat.yml: |
