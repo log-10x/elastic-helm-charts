@@ -19,6 +19,10 @@ l1x:
   # L1X mode - "report", "regulate" or "optimize"
   kind: "regulate"
 
+  # Specify name for the l1x runtime
+  # If empty, will use default from l1x configuration
+  runtimeName:
+
   # Control fetching L1X config and/or symbols from github.
   # If either config.enabled or symbols.enabled are true, the deployment will setup an
   # init container to fetch config/symbols before the filebeat pod is live, and will share

@@ -11,6 +11,8 @@ l1x:
 
   kind: "regulate"
 
+  runtimeName: "my-filebeat-regulator"
+
 daemonset:
   filebeatConfig:
     filebeat.yml: |

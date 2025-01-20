@@ -11,6 +11,8 @@ l1x:
 
   kind: "optimize"
 
+  runtimeName: "my-filebeat-optimizer"
+
 daemonset:
   filebeatConfig:
     filebeat.yml: |
