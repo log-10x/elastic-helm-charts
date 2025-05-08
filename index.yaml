@@ -6,6 +6,31 @@ entries:
         - kind: changed
           description: "Added Log10x integration to filebeat"
     apiVersion: v2
+    appVersion: 0.18.0
+    created: "2025-05-08T12:00:11.584579135Z"
+    description: A Helm chart for Kubernetes for Log10x + Filebeat
+    digest: 619223e6d3a533fffaf9691517dfa3f764904c78a6cd43e7332b5efd293a27a7
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://helm.elastic.co/icons/beats.png
+    keywords:
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: dor.levi@l1x.co
+      name: dor-levi
+    name: log10x-filebeat
+    sources:
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/log10x-filebeat-0.3.5/log10x-filebeat-0.3.5.tgz
+    version: 0.3.5
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Added Log10x integration to filebeat"
+    apiVersion: v2
     appVersion: 0.11.14
     created: "2025-01-21T12:21:28.800003959Z"
     description: A Helm chart for Kubernetes for Log10x + Filebeat
@@ -126,4 +151,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/log10x-filebeat-0.3.0/log10x-filebeat-0.3.0.tgz
     version: 0.3.0
-generated: "2025-01-21T12:21:28.800028093Z"
+generated: "2025-05-08T12:00:11.58461909Z"
