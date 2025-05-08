@@ -9,6 +9,12 @@ l1x:
   #
   enabled: true
 
+  # Specifies the Log10x distribution and affects which image will be used.
+  # For more details, see - http://doc.log10x.com/architecture/flavors
+  #
+  # jit, native
+  variant: jit
+
   # Turns on Filebeat debug log
   #
   debug: false
@@ -312,16 +318,9 @@ image: "ghcr.io/log-10x/log10x-filebeat"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
-# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.variant }}
+# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.l1x.variant }}
 #
 imageTag: ""
-
-# Specifies the Log10x distribution used.
-# For more details, see - http://doc.log10x.com/home/install/#flavor-matrix
-#
-# jit, native
-#
-imageVariant: jit
 
 # # Only applicable for Deployment or StatefulSet
 # replicaCount: 1

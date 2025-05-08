@@ -1,6 +1,6 @@
 {{- if .Values.daemonset.enabled }}
 {{- $l1xGHInit := or .Values.l1x.github.config.enabled .Values.l1x.github.symbols.enabled -}}
-{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.imageVariant) -}}
+{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.l1x.variant) -}}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
