@@ -1,6 +1,6 @@
 {{- if .Values.daemonset.enabled }}
-{{- $l1xGHInit := or .Values.l1x.github.config.enabled .Values.l1x.github.symbols.enabled -}}
-{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.l1x.variant) -}}
+{{- $tenxGHInit := or .Values.tenx.github.config.enabled .Values.tenx.github.symbols.enabled -}}
+{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.tenx.variant) -}}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -111,7 +111,7 @@ spec:
       - name: varrundockersock
         hostPath:
           path: /var/run/docker.sock
-    {{- if and .Values.l1x.enabled $l1xGHInit }}
+    {{- if and .Values.tenx.enabled $tenxGHInit }}
       - name: shared-git-volume
         emptyDir: {}
     {{- end }}
@@ -122,30 +122,30 @@ spec:
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
       {{- end }}
-      {{- if or (.Values.extraInitContainers) (and .Values.l1x.enabled $l1xGHInit) }}
+      {{- if or (.Values.extraInitContainers) (and .Values.tenx.enabled $tenxGHInit) }}
       initContainers:
-        {{- if and .Values.l1x.enabled $l1xGHInit }}
-        - name: l1x-git-config
+        {{- if and .Values.tenx.enabled $tenxGHInit }}
+        - name: tenx-git-config
           image: ghcr.io/log-10x/github-config-fetcher:0.2.0
           args:
-            {{- if .Values.l1x.github.config.enabled }}
+            {{- if .Values.tenx.github.config.enabled }}
             - "--config-repo"
-            - "https://{{ .Values.l1x.github.config.token }}@github.com/{{ .Values.l1x.github.config.repo }}.git"
-            {{- if .Values.l1x.github.config.branch }}
+            - "https://{{ .Values.tenx.github.config.token }}@github.com/{{ .Values.tenx.github.config.repo }}.git"
+            {{- if .Values.tenx.github.config.branch }}
             - "--config-branch"
-            - "{{ .Values.l1x.github.config.branch }}"
+            - "{{ .Values.tenx.github.config.branch }}"
             {{- end }}
             {{- end }}
-            {{- if .Values.l1x.github.symbols.enabled }}
+            {{- if .Values.tenx.github.symbols.enabled }}
             - "--symbols-repo"
-            - "https://{{ .Values.l1x.github.symbols.token }}@github.com/{{ .Values.l1x.github.symbols.repo }}.git"
-            {{- if .Values.l1x.github.symbols.branch }}
+            - "https://{{ .Values.tenx.github.symbols.token }}@github.com/{{ .Values.tenx.github.symbols.repo }}.git"
+            {{- if .Values.tenx.github.symbols.branch }}
             - "--symbols-branch"
-            - "{{ .Values.l1x.github.symbols.branch }}"
+            - "{{ .Values.tenx.github.symbols.branch }}"
             {{- end }}
-            {{- if .Values.l1x.github.symbols.path }}
+            {{- if .Values.tenx.github.symbols.path }}
             - "--symbols-path"
-            - "{{ .Values.l1x.github.symbols.path }}"
+            - "{{ .Values.tenx.github.symbols.path }}"
             {{- end }}
             {{- end }}
           volumeMounts:
@@ -168,7 +168,7 @@ spec:
       {{- end }}
       containers:
       - name: "{{ .Chart.Name }}"
-        {{- if .Values.l1x.debug }}
+        {{- if .Values.tenx.debug }}
         image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}-debug"
         {{- else}}
         image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}"
@@ -178,7 +178,7 @@ spec:
         - "-e"
         - "-E"
         - "http.enabled=true"
-        {{- if .Values.l1x.debug }}
+        {{- if .Values.tenx.debug }}
         - "-d"
         - "\"*\""
         {{- end }}
@@ -197,30 +197,30 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        - name: L1X_LOG_PATH
-          value: /etc/l1x/log/
-        {{- if .Values.l1x.enabled }}
-        - name: L1X_LICENSE
-          value: "{{ .Values.l1x.license }}"
-        {{- if .Values.l1x.runtimeName }}
-        - name: L1X_RUNTIME_NAME
-          value: "{{ .Values.l1x.runtimeName }}"
+        - name: TENX_LOG_PATH
+          value: /etc/tenx/log/
+        {{- if .Values.tenx.enabled }}
+        - name: TENX_LICENSE
+          value: "{{ .Values.tenx.license }}"
+        {{- if .Values.tenx.runtimeName }}
+        - name: TENX_RUNTIME_NAME
+          value: "{{ .Values.tenx.runtimeName }}"
         {{- end }}
-        {{- if .Values.l1x.github.config.enabled }}
-        - name: L1X_CONFIG
-          value: "/etc/l1x/git/config"
+        {{- if .Values.tenx.github.config.enabled }}
+        - name: TENX_CONFIG
+          value: "/etc/tenx/git/config"
         {{- end }}
-        {{- if .Values.l1x.github.symbols.enabled }}
-        - name: L1X_SYMBOLS_PATH
-          value: "/etc/l1x/git/config/data/shared/symbols"
+        {{- if .Values.tenx.github.symbols.enabled }}
+        - name: TENX_SYMBOLS_PATH
+          value: "/etc/tenx/git/config/data/shared/symbols"
         {{- end }}
-        - name: L1X_RUN_ARGS
-        {{- if eq $.Values.l1x.kind "optimize" }}
-          value: "@run/input/forwarder/filebeat/optimize/config.yaml @run/apps/edge/optimizer/config.yaml"
-        {{- else if eq $.Values.l1x.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @run/apps/edge/regulator/config.yaml"
-        {{- else if eq $.Values.l1x.kind "report" }}
-          value: "@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter/config.yaml"
+        - name: TENX_RUN_ARGS
+        {{- if eq $.Values.tenx.kind "optimize" }}
+          value: "@run/input/forwarder/filebeat/optimize/config.yaml @run/apps/edge/optimizer"
+        {{- else if eq $.Values.tenx.kind "regulate" }}
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @run/apps/edge/regulator"
+        {{- else if eq $.Values.tenx.kind "report" }}
+          value: "@run/input/forwarder/filebeat/report/config.yaml @run/apps/edge/reporter"
         {{- end }}
         {{- end }}
 {{- if .Values.extraEnvs | default .Values.daemonset.extraEnvs }}
@@ -262,9 +262,9 @@ spec:
         - name: varrundockersock
           mountPath: /var/run/docker.sock
           readOnly: true
-      {{- if and .Values.l1x.enabled $l1xGHInit }}
+      {{- if and .Values.tenx.enabled $tenxGHInit }}
         - name: shared-git-volume
-          mountPath: /etc/l1x/git
+          mountPath: /etc/tenx/git
       {{- end }}
         {{- if .Values.extraVolumeMounts | default .Values.daemonset.extraVolumeMounts }}
 {{ toYaml (.Values.extraVolumeMounts | default .Values.daemonset.extraVolumeMounts ) | indent 8 }}

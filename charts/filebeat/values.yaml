@@ -1,11 +1,11 @@
 ---
-# L1X configuration
+# 10x configuration
 #
 # NOTE - also look at filebeatConfig which is placed lower in this file,
 # as you may want to edit it for finer output control to elastic search.
 #
-l1x:
-  # Main switch to enabled/disable l1x.
+tenx:
+  # Main switch to enabled/disable 10x.
   #
   enabled: true
 
@@ -19,32 +19,32 @@ l1x:
   #
   debug: false
 
-  # Specify your l1x license key
+  # Specify your 10x license key
   license: "NO-LICENSE"
 
-  # L1X mode - "report", "regulate" or "optimize"
+  # 10x mode - "report", "regulate" or "optimize"
   kind: "regulate"
 
-  # Specify name for the l1x runtime
-  # If empty, will use default from l1x configuration
+  # Specify name for the 10x runtime
+  # If empty, will use default from 10x configuration
   runtimeName:
 
-  # Control fetching L1X config and/or symbols from github.
+  # Control fetching 10x config and/or symbols from github.
   # If either config.enabled or symbols.enabled are true, the deployment will setup an
   # init container to fetch config/symbols before the filebeat pod is live, and will share
   # the result files via a shared volume 'shared-git-volume' that's mounted to the filebeat
-  # pod at '/etc/l1x/git'
+  # pod at '/etc/tenx/git'
   #
-  # To learn more about the l1x github config fetcher, see:
-  # https://github.com/l1x-co/docker-images-tmp/tree/main/ext/github-config-fetcher
+  # To learn more about the 10x github config fetcher, see:
+  # https://github.com/log-10x/docker-images/tree/main/ext/github-config-fetcher
   #
   github:
     config:
       # If config.enabled is true, the init container will fetch the config from github.
-      # The config will be at '/etc/l1x/git/config', and the L1X_PATH env var will
+      # The config will be at '/etc/tenx/git/config', and the TENX_CONFIG env var will
       # be set to point to it.
       #
-      # Otherwise, the default config bundled with the filebeat+l1x image will be used.
+      # Otherwise, the default config bundled with the filebeat+10x image will be used.
       #
       enabled: false
 
@@ -63,8 +63,8 @@ l1x:
 
     symbols:
       # If symbols.enabled is true, the init container will fetch the symbols from github.
-      # The symbols will be at '/etc/l1x/git/config/data/shared/symbols', and the environment
-      # variable L1X_SYMBOLS_PATH will be set to match
+      # The symbols will be at '/etc/tenx/git/config/data/shared/symbols', and the environment
+      # variable TENX_SYMBOLS_PATH will be set to match
       #
       enabled: false
 
@@ -83,18 +83,18 @@ l1x:
 
       # Optional - a sub folder inside the repo where symbols were placed.
       # If omitted, the entire repo is considered as the symbols path.
-      # path: "l1x/my-app/symbols"
+      # path: "tenx/my-app/symbols"
 
-  # Used internally by the template to setup the correct read back unix socket from the l1x pipeline
+  # Used internally by the template to setup the correct read back unix socket from the 10x pipeline
   inputs:
-    optimize: ${L1X_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/l1xNix.yml
-    regulate: ${L1X_MODULES}/pipelines/run/modules/input/forwarder/filebeat/regulate/l1xNix.yml
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
+    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/regulate/tenxNix.yml
 
-  # Used internally by the template the setup the correct way filebeat will emit events into the l1x pipeline
+  # Used internally by the template the setup the correct way filebeat will emit events into the 10x pipeline
   processors:
-    optimize: ${L1X_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/l1x-optimize.js
-    regulate: ${L1X_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/l1x-regulate.js
-    report: ${L1X_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/l1x-report.js
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-optimize.js
+    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-regulate.js
+    report: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-report.js
 
 daemonset:
   # Annotations to apply to the daemonset
@@ -131,31 +131,31 @@ daemonset:
   # Allows you to add any config files in /usr/share/filebeat
   # such as filebeat.yml for daemonset
   #
-  # L1X - in addition to the default filebeat k8s config, this adds several
-  # components that are part of the l1x pipeline deployment:
+  # 10x - in addition to the default filebeat k8s config, this adds several
+  # components that are part of the 10x pipeline deployment:
   #
-  # 1. Monitor of the l1x internal log, and reporting it to elasticsearch
-  # 2. Setting up the JS processor (all apps) and L1x read-back ('regulator'/'optimizer')
-  #    for the integration between the L1x pipeline and filebeat
-  # 3. Reporting L1x template objects to elasticsearch ('optimizer' only)
+  # 1. Monitor of the 10x internal log, and reporting it to elasticsearch
+  # 2. Setting up the JS processor (all apps) and 10x read-back ('regulator'/'optimizer')
+  #    for the integration between the 10x pipeline and filebeat
+  # 3. Reporting 10x template objects to elasticsearch ('optimizer' only)
   #
   filebeatConfig:
     filebeat.yml: |
 
-      {{- if and .Values.l1x.enabled (ne .Values.l1x.kind "report") }}
+      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
       filebeat.config.inputs:
         enabled: true
-        path: {{ index .Values.l1x.inputs .Values.l1x.kind }}
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
       {{- end }}
 
       filebeat.inputs:
-      {{- if .Values.l1x.enabled }}
+      {{- if .Values.tenx.enabled }}
       - type: filestream
-        id: l1x_internal
+        id: tenx_internal
         paths:
-          - ${L1X_LOG_PATH}/*.log
+          - ${TENX_LOG_PATH}/*.log
         fields:
-          log_type: l1x_internal
+          log_type: tenx_internal
       {{- end }}
       - type: container
         paths:
@@ -166,10 +166,10 @@ daemonset:
             matchers:
             - logs_path:
                 logs_path: "/var/log/containers/"
-        {{- if .Values.l1x.enabled }}
+        {{- if .Values.tenx.enabled }}
         - script:
             lang: javascript
-            file: {{ index .Values.l1x.processors .Values.l1x.kind }}
+            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
         {{- end }}
 
       output.elasticsearch:
@@ -179,12 +179,12 @@ daemonset:
         password: '${ELASTICSEARCH_PASSWORD}'
         protocol: https
         ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
-        {{- if .Values.l1x.enabled }}
+        {{- if .Values.tenx.enabled }}
         indices:
-        - index: "l1x_internal"
+        - index: "tenx_internal"
           when.equals:
-            fields.log_type: "l1x_internal"
-        {{- if eq .Values.l1x.kind "optimize" }}
+            fields.log_type: "tenx_internal"
+        {{- if eq .Values.tenx.kind "optimize" }}
         - index: "l1es_dml"
           when.has_fields: ["template", "templateHash"]
         {{- end }}
@@ -318,7 +318,7 @@ image: "ghcr.io/log-10x/log10x-filebeat"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
-# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.l1x.variant }}
+# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.tenx.variant }}
 #
 imageTag: ""
 
