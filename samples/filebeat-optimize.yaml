@@ -1,13 +1,13 @@
-# Sample values.yaml for deploying an L1x edge optimizer with filebeat
+# Sample values.yaml for deploying an 10x edge optimizer with filebeat
 #
-# Make sure to add your L1x license, as well as setup your backend info
+# Make sure to add your 10x license, as well as setup your backend info
 # in the filebeat.yml config
 #
 # For more info on deploying, see -
 # http://doc.log10x.com/deploy/apps/edge/optimizer/#filebeat
 #
-l1x:
-  license: "<YOUR-L1X-LICENSE-HERE>"
+tenx:
+  license: "<YOUR-10X-LICENSE-HERE>"
 
   kind: "optimize"
 
@@ -18,15 +18,15 @@ daemonset:
     filebeat.yml: |
       filebeat.config.inputs:
         enabled: true
-        path: {{ index .Values.l1x.inputs .Values.l1x.kind }}
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
 
       filebeat.inputs:
       - type: filestream
-        id: l1x_internal
+        id: tenx_internal
         paths:
-          - ${L1X_LOG_PATH}/*.log
+          - ${TENX_LOG_PATH}/*.log
         fields:
-          log_type: l1x_internal
+          log_type: tenx_internal
       - type: container
         paths:
           - /var/log/containers/*.log
@@ -38,7 +38,7 @@ daemonset:
                 logs_path: "/var/log/containers/"
         - script:
             lang: javascript
-            file: {{ index .Values.l1x.processors .Values.l1x.kind }}
+            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
 
       output.elasticsearch:
         host: '${NODE_NAME}'
@@ -48,8 +48,8 @@ daemonset:
         protocol: https
         ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
         indices:
-        - index: "l1x_internal"
+        - index: "tenx_internal"
           when.equals:
-            fields.log_type: "l1x_internal"
+            fields.log_type: "tenx_internal"
         - index: "l1es_dml"
           when.has_fields: ["template", "templateHash"]
