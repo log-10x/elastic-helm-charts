@@ -1,14 +1,15 @@
 apiVersion: v2
-name: log10x-filebeat
-description: A Helm chart for Kubernetes for Log10x + Filebeat
+name: filebeat-10x
+description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
 keywords:
+  - 10x
   - log10x
   - logging
   - elastic
   - filebeat
 # type: application
-version: 0.3.5
-appVersion: 0.18.0
+version: 0.3.6
+appVersion: 0.21.0
 icon: https://helm.elastic.co/icons/beats.png
 home: https://github.com/log-10x/elastic-helm-charts
 sources:
@@ -19,4 +20,4 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Added Log10x integration to filebeat"
+      description: "Added 10x Observability engine integration to filebeat"

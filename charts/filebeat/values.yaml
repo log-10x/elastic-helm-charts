@@ -9,7 +9,7 @@ tenx:
   #
   enabled: true
 
-  # Specifies the Log10x distribution and affects which image will be used.
+  # Specifies the 10x distribution and affects which image will be used.
   # For more details, see - http://doc.log10x.com/architecture/flavors
   #
   # jit, native
@@ -314,7 +314,7 @@ hostAliases: []
 #  - "foo.local"
 #  - "bar.local"
 
-image: "ghcr.io/log-10x/log10x-filebeat"
+image: "ghcr.io/log-10x/filebeat-10x"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
