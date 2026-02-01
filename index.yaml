@@ -1,0 +1,61 @@
+apiVersion: v1
+entries:
+  filebeat:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Added 10x Observability engine integration to filebeat"
+    apiVersion: v2
+    appVersion: 0.2.1
+    created: "2026-02-01T16:27:10.664201224Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: ad6501dffba6e11404473cc6d9c7de7770bc54ef6b687434e0bbb34151786c6f
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-0.2.1/filebeat-0.2.1.tgz
+    version: 0.2.1
+  logstash:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Added 10x Observability engine integration to logstash"
+    apiVersion: v2
+    appVersion: 8.5.1
+    created: "2026-02-01T16:27:10.844398907Z"
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: e3cb6392260604a7751cbe90926c42803d07d2857abc53a333264413cc707953
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
+    version: 0.2.1
+generated: "2026-02-01T16:27:10.844408284Z"
