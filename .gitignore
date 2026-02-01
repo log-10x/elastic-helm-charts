@@ -1,9 +1,6 @@
-license.json
-elastic-certificates.p12
-.pytest_cache
-*.pyc
-index.yaml
-*.tgz
-.idea/
-/venv
-.vscode/
+.vscode
+# Helm chart automated files
+/charts/*/requirements.lock
+
+# OSx generated
+.DS_Store
