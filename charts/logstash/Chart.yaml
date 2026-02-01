@@ -1,0 +1,24 @@
+apiVersion: v2
+name: logstash
+description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+keywords:
+  - 10x
+  - log10x
+  - logging
+  - elastic
+  - logstash
+version: 0.2.1
+appVersion: 8.5.1
+icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+home: https://github.com/log-10x/elastic-helm-charts
+sources:
+  - https://github.com/log-10x/elastic-helm-charts
+  - https://github.com/log-10x/docker-images
+  - https://github.com/elastic/logstash
+maintainers:
+  - name: Log10x
+    email: engineering@log10x.com
+annotations:
+  artifacthub.io/changes: |
+    - kind: changed
+      description: "Added 10x Observability engine integration to logstash"

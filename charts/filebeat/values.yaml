@@ -1,0 +1,407 @@
+---
+# 10x configuration
+#
+# NOTE - also look at filebeatConfig which is placed lower in this file,
+# as you may want to edit it for finer output control to elastic search.
+#
+tenx:
+  # Main switch to enabled/disable 10x.
+  #
+  enabled: true
+
+  # Specifies the 10x distribution and affects which image will be used.
+  # For more details, see - http://doc.log10x.com/architecture/flavors
+  #
+  # jit, native
+  variant: jit
+
+  # Turns on Filebeat debug log
+  #
+  debug: false
+
+  # Specify your 10x API key (get one at http://doc.log10x.com/run/bootstrap/#apikey)
+  apiKey: ""
+
+  # Deprecated: use apiKey instead. Kept for backwards compatibility.
+  license: ""
+
+  # 10x mode - "report", "regulate" or "optimize"
+  kind: "regulate"
+
+  # Specify name for the 10x runtime
+  # If empty, will use default from 10x configuration
+  runtimeName:
+
+  # Control fetching 10x config and/or symbols from github.
+  # If either config.enabled or symbols.enabled are true, the deployment will setup an
+  # init container to fetch config/symbols before the filebeat pod is live, and will share
+  # the result files via a shared volume 'shared-git-volume' that's mounted to the filebeat
+  # pod at '/etc/tenx/git'
+  #
+  # To learn more about the 10x github config fetcher, see:
+  # https://github.com/log-10x/docker-images/tree/main/ext/github-config-fetcher
+  #
+  github:
+    # GitHub config fetcher init container image
+    image:
+      repository: "ghcr.io/log-10x/github-config-fetcher"
+      tag: "0.9.0"
+      pullPolicy: "IfNotPresent"
+
+    config:
+      # If config.enabled is true, the init container will fetch the config from github.
+      # The config will be at '/etc/tenx/git/config', and the TENX_CONFIG env var will
+      # be set to point to it.
+      #
+      # Otherwise, the default config bundled with the filebeat+10x image will be used.
+      #
+      enabled: false
+
+      # Access token for GitHub.
+      # To learn more, see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+      #
+      token: "MY-TOKEN"
+
+      # The repo to fetch the config from
+      #
+      repo: "user-name/config-repo"
+
+      # Optional - a branch to pull.
+      # If omitted, the default repo branch will be used.
+      # branch: "main"
+
+    symbols:
+      # If symbols.enabled is true, the init container will fetch the symbols from github.
+      # The symbols will be at '/etc/tenx/git/config/data/shared/symbols', and the environment
+      # variable TENX_SYMBOLS_PATH will be set to match
+      #
+      enabled: false
+
+      # Access token for GitHub.
+      # To learn more, see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+      #
+      token: "MY-TOKEN"
+
+      # The repo to fetch the config from
+      #
+      repo: "user-name/symbols-repo"
+
+      # Optional - a branch to pull.
+      # If omitted, the default repo branch will be used.
+      # branch: "main"
+
+      # Optional - a sub folder inside the repo where symbols were placed.
+      # If omitted, the entire repo is considered as the symbols path.
+      # path: "tenx/my-app/symbols"
+
+  # Used internally by the template to setup the correct read back unix socket from the 10x pipeline
+  inputs:
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
+    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/regulate/tenxNix.yml
+
+  # Used internally by the template the setup the correct way filebeat will emit events into the 10x pipeline
+  processors:
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-optimize.js
+    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-regulate.js
+    report: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-report.js
+
+daemonset:
+  # Annotations to apply to the daemonset
+  annotations: {}
+  # additionals labels
+  labels: {}
+  affinity: {}
+  # Include the daemonset
+  enabled: true
+  # Extra environment variables for Filebeat container.
+  envFrom: []
+  # - configMapRef:
+  #     name: config-secret
+  extraEnvs:
+    - name: "ELASTICSEARCH_USERNAME"
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: username
+    - name: "ELASTICSEARCH_PASSWORD"
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: password
+  # Allows you to add any config files in /usr/share/filebeat
+  extraVolumes: []
+  # - name: extras
+  #   emptyDir: {}
+  extraVolumeMounts: []
+  # - name: extras
+  #   mountPath: /usr/share/extras
+  #   readOnly: true
+  hostNetworking: false
+  # Allows you to add any config files in /usr/share/filebeat
+  # such as filebeat.yml for daemonset
+  #
+  # 10x - in addition to the default filebeat k8s config, this adds several
+  # components that are part of the 10x pipeline deployment:
+  #
+  # 1. Monitor of the 10x internal log, and reporting it to elasticsearch
+  # 2. Setting up the JS processor (all apps) and 10x read-back ('regulator'/'optimizer')
+  #    for the integration between the 10x pipeline and filebeat
+  # 3. Reporting 10x template objects to elasticsearch ('optimizer' only)
+  #
+  filebeatConfig:
+    filebeat.yml: |
+
+      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
+      filebeat.config.inputs:
+        enabled: true
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+      {{- end }}
+
+      filebeat.inputs:
+      {{- if .Values.tenx.enabled }}
+      - type: filestream
+        id: tenx_internal
+        paths:
+          - ${TENX_LOG_PATH}/*.log
+        fields:
+          log_type: tenx_internal
+      {{- end }}
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+        {{- if .Values.tenx.enabled }}
+        - script:
+            lang: javascript
+            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+        {{- end }}
+
+      output.elasticsearch:
+        host: '${NODE_NAME}'
+        hosts: '["https://${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}"]'
+        username: '${ELASTICSEARCH_USERNAME}'
+        password: '${ELASTICSEARCH_PASSWORD}'
+        protocol: https
+        ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
+        {{- if .Values.tenx.enabled }}
+        indices:
+        - index: "tenx_internal"
+          when.equals:
+            fields.log_type: "tenx_internal"
+        {{- if eq .Values.tenx.kind "optimize" }}
+        - index: "l1es_dml"
+          when.has_fields: ["template", "templateHash"]
+        {{- end }}
+        {{- end }}
+
+  # Only used when updateStrategy is set to "RollingUpdate"
+  maxUnavailable: 1
+  nodeSelector: {}
+  # A list of secrets and their paths to mount inside the pod
+  # This is useful for mounting certificates for security other sensitive values
+  secretMounts:
+    - name: elasticsearch-master-certs
+      secretName: elasticsearch-master-certs
+      path: /usr/share/filebeat/certs/
+  #  - name: filebeat-certificates
+  #    secretName: filebeat-certificates
+  #    path: /usr/share/filebeat/certs
+  # Various pod security context settings. Bear in mind that many of these have an impact on Filebeat functioning properly.
+  #
+  # - User that the container will execute as. Typically necessary to run as root (0) in order to properly collect host container logs.
+  # - Whether to execute the Filebeat containers as privileged containers. Typically not necessarily unless running within environments such as OpenShift.
+  securityContext:
+    runAsUser: 0
+    privileged: false
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  tolerations: []
+
+deployment:
+  # Annotations to apply to the deployment
+  annotations: {}
+  # additionals labels
+  labels: {}
+  affinity: {}
+  # Include the deployment
+  enabled: false
+  # Extra environment variables for Filebeat container.
+  envFrom: []
+  # - configMapRef:
+  #     name: config-secret
+  extraEnvs:
+    - name: "ELASTICSEARCH_USERNAME"
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: username
+    - name: "ELASTICSEARCH_PASSWORD"
+      valueFrom:
+        secretKeyRef:
+          name: elasticsearch-master-credentials
+          key: password
+  # Allows you to add any config files in /usr/share/filebeat
+  extraVolumes: []
+  # - name: extras
+  #   emptyDir: {}
+  extraVolumeMounts: []
+  # - name: extras
+  #   mountPath: /usr/share/extras
+  #   readOnly: true
+  # such as filebeat.yml for deployment
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+        - type: log
+          paths:
+            - /usr/share/filebeat/logs/filebeat
+
+      output.elasticsearch:
+        host: "${NODE_NAME}"
+        hosts: '["https://${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}"]'
+        username: "${ELASTICSEARCH_USERNAME}"
+        password: "${ELASTICSEARCH_PASSWORD}"
+        protocol: https
+        ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
+  nodeSelector: {}
+  # A list of secrets and their paths to mount inside the pod
+  # This is useful for mounting certificates for security other sensitive values
+  secretMounts:
+    - name: elasticsearch-master-certs
+      secretName: elasticsearch-master-certs
+      path: /usr/share/filebeat/certs/
+  #  - name: filebeat-certificates
+  #    secretName: filebeat-certificates
+  #    path: /usr/share/filebeat/certs
+  #
+  # - User that the container will execute as.
+  # Not necessary to run as root (0) as the Filebeat Deployment use cases do not need access to Kubernetes Node internals
+  # - Typically not necessarily unless running within environments such as OpenShift.
+  securityContext:
+    runAsUser: 0
+    privileged: false
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "100Mi"
+    limits:
+      cpu: "1000m"
+      memory: "200Mi"
+  tolerations: []
+
+# Replicas being used for the filebeat deployment
+replicas: 1
+
+extraContainers: ""
+# - name: dummy-init
+#   image: busybox
+#   command: ['echo', 'hey']
+
+extraInitContainers: []
+# - name: dummy-init
+
+# Root directory where Filebeat will write data to in order to persist registry data across pod restarts (file position and other metadata).
+hostPathRoot: /var/lib
+
+dnsConfig: {}
+# options:
+#   - name: ndots
+#     value: "2"
+hostAliases: []
+# - ip: "127.0.0.1"
+#  hostnames:
+#  - "foo.local"
+#  - "bar.local"
+
+image: "ghcr.io/log-10x/filebeat-10x"
+imagePullPolicy: "IfNotPresent"
+imagePullSecrets: []
+
+# Overrides the image tag whose default is {{ .Chart.AppVersion }}-{{ .Values.tenx.variant }}
+#
+imageTag: ""
+
+# # Only applicable for Deployment or StatefulSet
+# replicaCount: 1
+
+livenessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - |
+        #!/usr/bin/env bash -e
+        curl --fail 127.0.0.1:5066
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+readinessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - |
+        #!/usr/bin/env bash -e
+        filebeat test output
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+# Whether this chart should self-manage its service account, role, and associated role binding.
+managedServiceAccount: true
+
+clusterRoleRules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "apps"
+    resources:
+      - replicasets
+    verbs:
+      - get
+      - list
+      - watch
+
+podAnnotations: {}
+# iam.amazonaws.com/role: es-cluster
+
+# Custom service account override that the pod will use
+serviceAccount: ""
+
+# Annotations to add to the ServiceAccount that is created if the serviceAccount value isn't set.
+serviceAccountAnnotations: {}
+# eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/k8s.clustername.namespace.serviceaccount
+
+# How long to wait for Filebeat pods to stop gracefully
+terminationGracePeriod: 30
+# This is the PriorityClass settings as defined in
+# https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+priorityClassName: ""
+
+updateStrategy: RollingUpdate
+
+# Override various naming aspects of this chart
+# Only edit these if you know what you're doing
+nameOverride: ""
+fullnameOverride: ""

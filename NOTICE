@@ -1,0 +1,14 @@
+Log10x Elastic Helm Charts
+Copyright 2025-2026 Log10x, Inc.
+
+This product includes software developed at Elastic
+(https://www.elastic.co/).
+
+This repository is a fork of elastic/helm-charts
+(https://github.com/elastic/helm-charts), originally created in 2018.
+
+Modifications by Log10x, Inc. include integration of Log10x sidecar
+support for log optimization.
+
+The original work is licensed under the Apache License, Version 2.0.
+Log10x modifications are also licensed under the Apache License, Version 2.0.

@@ -1,0 +1,40 @@
+# CI test values - minimal config without external dependencies
+# This allows chart-testing to install the chart without requiring
+# elasticsearch secrets that don't exist in the test environment
+
+daemonset:
+  # Remove elasticsearch credential references
+  extraEnvs: []
+  # Remove elasticsearch certificate mounts
+  secretMounts: []
+  # Minimal filebeat config that outputs to console (no elasticsearch)
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+        processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            matchers:
+            - logs_path:
+                logs_path: "/var/log/containers/"
+
+      output.console:
+        pretty: true
+
+# Override readiness probe since "filebeat test output" doesn't work with console output
+# Use HTTP endpoint check instead (same as liveness probe)
+readinessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - |
+        #!/usr/bin/env bash -e
+        curl --fail 127.0.0.1:5066
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
