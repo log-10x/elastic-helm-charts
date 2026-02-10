@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 0.2.1
+version: 0.3.0
 appVersion: 8.5.1
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -21,4 +21,4 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Added 10x Observability engine integration to logstash"
+      description: "Upgraded 10x sidecar engine to 0.4.0"

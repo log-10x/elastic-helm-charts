@@ -119,6 +119,29 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 - Kubernetes metadata enrichment is enabled by default
 - The `regulate` and `optimize` modes use a JavaScript processor to integrate with the Log10x pipeline
 
+### Output Limitation
+
+> **Important:** When Log10x is enabled (`tenx.enabled: true`), **do not use `output.console`** as the Filebeat output.
+
+The Log10x engine communicates with Filebeat through a stdout pipe (`filebeat ... 2>&1 | tenx-edge run ...`). The Filebeat JavaScript processor (`tenx-*.js`) writes marked events to stdout, and the 10x engine reads them from stdin using a `"tenx":true` marker to distinguish real events from Filebeat's internal log messages.
+
+`output.console` also writes to stdout, injecting multi-line pretty-printed JSON into the same pipe. This causes JSON parsing errors in the 10x engine because event boundaries become corrupted.
+
+**Supported outputs:** `output.elasticsearch`, `output.logstash`, `output.file`, `output.kafka`, `output.redis`, and any other output that uses a network protocol or file — anything that does **not** write to stdout.
+
+**For local testing without Elasticsearch**, use `output.file`:
+
+```yaml
+daemonset:
+  filebeatConfig:
+    filebeat.yml: |
+      # ... your inputs ...
+      output.file:
+        path: "/tmp/filebeat-output"
+        filename: filebeat-events
+        rotate_every_kb: 10000
+```
+
 ### Sample Values Files
 
 See the [samples](../../samples/) directory for example configurations:

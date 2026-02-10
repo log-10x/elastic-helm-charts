@@ -117,6 +117,24 @@ daemonset:
   envFrom: []
   # - configMapRef:
   #     name: config-secret
+  #
+  # ⚠️ Filebeat Output Limitation
+  #
+  # The Log10x engine reads events from Filebeat via a stdout pipe
+  # (filebeat ... 2>&1 | tenx-edge run ...). Any Filebeat output that writes
+  # to stdout (e.g., output.console) will inject data into this pipe and
+  # cause JSON parsing errors in the 10x engine.
+  #
+  # Supported outputs: output.elasticsearch, output.logstash, output.file, output.kafka,
+  #                    and any other output that does NOT write to stdout.
+  # Unsupported:       output.console (writes to stdout, conflicts with the 10x pipe).
+  #
+  # For local testing without Elasticsearch, use output.file instead of output.console:
+  #   output.file:
+  #     path: "/tmp/filebeat-output"
+  #     filename: filebeat-events
+  #     rotate_every_kb: 10000
+  #
   extraEnvs:
     - name: "ELASTICSEARCH_USERNAME"
       valueFrom:
