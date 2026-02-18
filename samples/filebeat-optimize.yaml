@@ -4,7 +4,7 @@
 # in the filebeat.yml config
 #
 # For more info on deploying, see -
-# http://doc.log10x.com/deploy/apps/edge/optimizer/#filebeat
+# https://doc.log10x.com/apps/edge/optimizer/deploy/#filebeat
 #
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"

@@ -10,7 +10,7 @@ tenx:
   enabled: true
 
   # Specifies the 10x distribution and affects which image will be used.
-  # For more details, see - http://doc.log10x.com/architecture/flavors
+  # For more details, see - https://doc.log10x.com/architecture/flavors
   #
   # jit, native
   variant: jit
@@ -19,7 +19,7 @@ tenx:
   #
   debug: false
 
-  # Specify your 10x API key (get one at http://doc.log10x.com/run/bootstrap/#apikey)
+  # Specify your 10x API key (get one at https://doc.log10x.com/run/bootstrap/#apikey)
   apiKey: ""
 
   # Deprecated: use apiKey instead. Kept for backwards compatibility.
