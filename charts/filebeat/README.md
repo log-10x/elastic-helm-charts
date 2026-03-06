@@ -77,8 +77,8 @@ tenx:
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
-| `tenx.github.image.repository` | GitHub config fetcher image | `ghcr.io/log-10x/github-config-fetcher` |
-| `tenx.github.image.tag` | GitHub config fetcher image tag | `0.9.0` |
+| `tenx.github.image.repository` | GitHub config fetcher image | `log10x/github-config-fetcher` |
+| `tenx.github.image.tag` | GitHub config fetcher image tag | `0.9.6` |
 | `tenx.github.config.enabled` | Enable fetching config from GitHub | `false` |
 | `tenx.github.config.token` | GitHub access token for config repo | `""` |
 | `tenx.github.config.repo` | Config repository (e.g., `org/repo`) | `""` |
@@ -93,7 +93,7 @@ tenx:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | Filebeat Docker image | `ghcr.io/log-10x/filebeat-10x` |
+| `image` | Filebeat Docker image | `log10x/filebeat-10x` |
 | `imageTag` | Image tag (defaults to `{appVersion}-{variant}`) | `""` |
 | `daemonset.enabled` | Enable DaemonSet deployment | `true` |
 | `daemonset.filebeatConfig` | Filebeat configuration for DaemonSet | see values.yaml |
@@ -114,7 +114,7 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 ## Usage Notes
 
 - The chart deploys a DaemonSet by default, collecting logs from all nodes
-- The Log10x engine is bundled in the `ghcr.io/log-10x/filebeat-10x` image
+- The Log10x engine is bundled in the `log10x/filebeat-10x` image
 - Default configuration sends logs to Elasticsearch using credentials from `elasticsearch-master-credentials` secret
 - Kubernetes metadata enrichment is enabled by default
 - The `regulate` and `optimize` modes use a JavaScript processor to integrate with the Log10x pipeline

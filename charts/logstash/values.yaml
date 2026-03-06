@@ -304,8 +304,8 @@ tenx:
 
   # Log10x container image settings
   image:
-    repository: "ghcr.io/log-10x/pipeline-10x"
-    tag: "0.4.0"
+    repository: "log10x/pipeline-10x"
+    tag: "0.9.6"
     pullPolicy: "IfNotPresent"
 
   # Log10x API key (license)
@@ -333,7 +333,7 @@ tenx:
   github:
     # GitHub config fetcher init container image
     image:
-      repository: "ghcr.io/log-10x/github-config-fetcher"
+      repository: "log10x/github-config-fetcher"
       tag: "0.9.0"
       pullPolicy: "IfNotPresent"
 

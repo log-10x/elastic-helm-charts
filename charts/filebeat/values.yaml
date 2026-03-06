@@ -44,7 +44,7 @@ tenx:
   github:
     # GitHub config fetcher init container image
     image:
-      repository: "ghcr.io/log-10x/github-config-fetcher"
+      repository: "log10x/github-config-fetcher"
       tag: "0.9.0"
       pullPolicy: "IfNotPresent"
 
@@ -341,7 +341,7 @@ hostAliases: []
 #  - "foo.local"
 #  - "bar.local"
 
-image: "ghcr.io/log-10x/filebeat-10x"
+image: "log10x/filebeat-10x"
 imagePullPolicy: "IfNotPresent"
 imagePullSecrets: []
 
