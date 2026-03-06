@@ -7,7 +7,9 @@ daemonset:
   extraEnvs: []
   # Remove elasticsearch certificate mounts
   secretMounts: []
-  # Minimal filebeat config that outputs to console (no elasticsearch)
+  # Minimal filebeat config that outputs to file (no elasticsearch)
+  # NOTE: output.console cannot be used when tenx is enabled - it conflicts
+  # with the 10x stdout pipe. Use output.file instead.
   filebeatConfig:
     filebeat.yml: |
       filebeat.inputs:
@@ -21,8 +23,10 @@ daemonset:
             - logs_path:
                 logs_path: "/var/log/containers/"
 
-      output.console:
-        pretty: true
+      output.file:
+        path: "/tmp/filebeat-output"
+        filename: filebeat-events
+        rotate_every_kb: 10000
 
 # Override readiness probe since "filebeat test output" doesn't work with console output
 # Use HTTP endpoint check instead (same as liveness probe)
