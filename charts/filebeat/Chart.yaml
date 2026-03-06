@@ -21,6 +21,6 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Upgraded 10x engine to 0.4.0"
-    - kind: added
-      description: "Documented output.console limitation with 10x stdout pipe"
+      description: "Upgraded 10x engine to 0.9.6"
+    - kind: changed
+      description: "Moved container images from ghcr.io to Docker Hub"

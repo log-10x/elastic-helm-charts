@@ -21,4 +21,6 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Upgraded 10x sidecar engine to 0.4.0"
+      description: "Upgraded 10x sidecar engine to 0.9.6"
+    - kind: changed
+      description: "Moved container images from ghcr.io to Docker Hub"

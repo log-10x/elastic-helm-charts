@@ -71,15 +71,15 @@ tenx:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x sidecar container | `false` |
-| `tenx.image.repository` | Log10x container image repository | `ghcr.io/log-10x/tenx` |
-| `tenx.image.tag` | Log10x container image tag | `0.35.1-jit` |
+| `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
+| `tenx.image.tag` | Log10x container image tag | `0.9.6` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
-| `tenx.github.image.repository` | GitHub config fetcher image | `ghcr.io/log-10x/github-config-fetcher` |
-| `tenx.github.image.tag` | GitHub config fetcher image tag | `0.9.0` |
+| `tenx.github.image.repository` | GitHub config fetcher image | `log10x/github-config-fetcher` |
+| `tenx.github.image.tag` | GitHub config fetcher image tag | `0.9.6` |
 | `tenx.github.config.enabled` | Enable fetching config from GitHub | `false` |
 | `tenx.github.config.token` | GitHub access token for config repo | `""` |
 | `tenx.github.config.repo` | Config repository (e.g., `org/repo`) | `""` |
