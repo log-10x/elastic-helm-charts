@@ -7,8 +7,8 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 0.9.6
-appVersion: 0.9.6
+version: 0.9.7
+appVersion: 0.9.7
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
 sources:
@@ -21,6 +21,6 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Upgraded 10x engine to 0.9.6"
+      description: "Upgraded 10x engine to 0.9.7"
     - kind: changed
-      description: "Moved container images from ghcr.io to Docker Hub"
+      description: "Generalized git integration and added PVC volume mount support"

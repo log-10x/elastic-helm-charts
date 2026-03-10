@@ -74,7 +74,7 @@ tenx:
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x sidecar container | `false` |
 | `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
-| `tenx.image.tag` | Log10x container image tag | `0.9.6` |
+| `tenx.image.tag` | Log10x container image tag | `0.9.7` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
