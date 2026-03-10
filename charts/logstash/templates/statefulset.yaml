@@ -300,10 +300,14 @@ spec:
           - "@apps/edge/{{ if eq .Values.tenx.kind "report" }}reporter{{ else if eq .Values.tenx.kind "regulate" }}regulator{{ else }}optimizer{{ end }}"
         env:
           - name: TENX_API_KEY
+          {{- if .Values.tenx.apiKey }}
             valueFrom:
               secretKeyRef:
                 name: {{ template "logstash.fullname" . }}-tenx-api-key
                 key: api-key
+          {{- else }}
+            value: ""
+          {{- end }}
           {{- if .Values.tenx.runtimeName }}
           - name: TENX_RUNTIME_NAME
             value: {{ .Values.tenx.runtimeName | quote }}
