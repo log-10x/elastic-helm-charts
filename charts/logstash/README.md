@@ -41,17 +41,19 @@ tenx:
   kind: "regulate"  # Options: report, regulate, optimize
   runtimeName: "my-logstash-instance"
 
+  # Optional: Git access token for private repositories
+  gitToken: "YOUR-GIT-TOKEN"
+
   # Optional: GitOps configuration
-  github:
-    config:
+  config:
+    git:
       enabled: true
-      token: "YOUR-GITHUB-TOKEN"
-      repo: "YOUR-ORG/YOUR-CONFIG-REPO"
+      url: "https://github.com/YOUR-ORG/YOUR-CONFIG-REPO.git"
       branch: "main"  # Optional
-    symbols:
+  symbols:
+    git:
       enabled: true
-      token: "YOUR-GITHUB-TOKEN"
-      repo: "YOUR-ORG/YOUR-SYMBOLS-REPO"
+      url: "https://github.com/YOUR-ORG/YOUR-SYMBOLS-REPO.git"
       branch: "main"  # Optional
       path: "path/to/symbols"  # Optional
 ```
@@ -72,23 +74,26 @@ tenx:
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x sidecar container | `false` |
 | `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
-| `tenx.image.tag` | Log10x container image tag | `0.9.6` |
+| `tenx.image.tag` | Log10x container image tag | `0.9.7` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
-| `tenx.github.image.repository` | GitHub config fetcher image | `log10x/github-config-fetcher` |
-| `tenx.github.image.tag` | GitHub config fetcher image tag | `0.9.6` |
-| `tenx.github.config.enabled` | Enable fetching config from GitHub | `false` |
-| `tenx.github.config.token` | GitHub access token for config repo | `""` |
-| `tenx.github.config.repo` | Config repository (e.g., `org/repo`) | `""` |
-| `tenx.github.config.branch` | Branch to pull (optional) | `""` |
-| `tenx.github.symbols.enabled` | Enable fetching symbols from GitHub | `false` |
-| `tenx.github.symbols.token` | GitHub access token for symbols repo | `""` |
-| `tenx.github.symbols.repo` | Symbols repository (e.g., `org/repo`) | `""` |
-| `tenx.github.symbols.branch` | Branch to pull (optional) | `""` |
-| `tenx.github.symbols.path` | Sub-path within repo for symbols | `""` |
+| `tenx.gitToken` | Git access token for private repositories | `""` |
+| `tenx.configFetcherImage.repository` | Git config fetcher image | `log10x/git-config-fetcher` |
+| `tenx.configFetcherImage.tag` | Git config fetcher image tag | `0.9.7` |
+| `tenx.config.git.enabled` | Enable fetching config from a git repository | `false` |
+| `tenx.config.git.url` | Full HTTPS URL of the config git repository | `""` |
+| `tenx.config.git.branch` | Branch to pull (optional) | `""` |
+| `tenx.config.volume.enabled` | Mount a PVC for config (air-gapped) | `false` |
+| `tenx.config.volume.claimName` | PVC claim name for config volume | `""` |
+| `tenx.symbols.git.enabled` | Enable fetching symbols from a git repository | `false` |
+| `tenx.symbols.git.url` | Full HTTPS URL of the symbols git repository | `""` |
+| `tenx.symbols.git.branch` | Branch to pull (optional) | `""` |
+| `tenx.symbols.git.path` | Sub-path within repo for symbols (optional) | `""` |
+| `tenx.symbols.volume.enabled` | Mount a PVC for symbols (air-gapped) | `false` |
+| `tenx.symbols.volume.claimName` | PVC claim name for symbols volume | `""` |
 
 ### Logstash Configuration
 

@@ -305,7 +305,7 @@ tenx:
   # Log10x container image settings
   image:
     repository: "log10x/pipeline-10x"
-    tag: "0.9.6"
+    tag: "0.9.7"
     pullPolicy: "IfNotPresent"
 
   # Log10x API key (license)
@@ -329,25 +329,76 @@ tenx:
       cpu: 100m
       memory: 128Mi
 
-  # GitOps configuration (optional)
-  github:
-    # GitHub config fetcher init container image
-    image:
-      repository: "log10x/github-config-fetcher"
-      tag: "0.9.0"
-      pullPolicy: "IfNotPresent"
+  # Git access token for fetching config/symbols from private Git repositories.
+  # Works with any Git provider (GitHub, GitLab, Bitbucket, self-hosted).
+  # When set, a Kubernetes Secret is created and injected via secretKeyRef.
+  #
+  gitToken: ""
 
-    # Configuration repository
-    config:
-      enabled: false
-      token: ""
-      repo: ""
-      branch: ""
+  # Git config fetcher init container image
+  # Used to clone config/symbols repositories when git integration is enabled
+  #
+  configFetcherImage:
+    repository: "log10x/git-config-fetcher"
+    tag: "0.9.7"
+    pullPolicy: "IfNotPresent"
 
-    # Symbol library repository
-    symbols:
+  # Control fetching 10x config and/or symbols from a git repository or a volume mount.
+  # If either config or symbols git is enabled, the deployment will setup an init container
+  # to fetch config/symbols before the logstash pod is live, and will share the result files
+  # via a shared volume 'tenx-git' that's mounted at '/etc/tenx/git'
+  #
+  # To learn more about the git config fetcher, see:
+  # https://github.com/log-10x/docker-images/tree/main/ext/git-config-fetcher
+  #
+  config:
+    git:
+      # If enabled, the init container will clone the config from a git repository.
+      # The config will be at '/etc/tenx/git/config', and the TENX_CONFIG env var will
+      # be set to point to it.
+      #
+      # Otherwise, the default config bundled with the 10x image will be used.
+      #
       enabled: false
-      token: ""
-      repo: ""
-      branch: ""
-      path: ""
+
+      # Full HTTPS URL of the git repository
+      #
+      url: ""
+
+      # Optional - a branch to pull.
+      # If omitted, the default repo branch will be used.
+      # branch: "main"
+
+    volume:
+      # Mount an existing PersistentVolumeClaim for config (for air-gapped environments
+      # or config managed outside of Git).
+      #
+      enabled: false
+      claimName: ""
+
+  symbols:
+    git:
+      # If enabled, the init container will clone the symbols from a git repository.
+      # The symbols will be at '/etc/tenx/git/config/data/shared/symbols', and the
+      # environment variable TENX_SYMBOLS_PATH will be set to match.
+      #
+      enabled: false
+
+      # Full HTTPS URL of the git repository
+      #
+      url: ""
+
+      # Optional - a branch to pull.
+      # If omitted, the default repo branch will be used.
+      # branch: "main"
+
+      # Optional - a sub folder inside the repo where symbols were placed.
+      # If omitted, the entire repo is considered as the symbols path.
+      # path: "tenx/my-app/symbols"
+
+    volume:
+      # Mount an existing PersistentVolumeClaim for symbols (for air-gapped environments
+      # or symbols managed outside of Git).
+      #
+      enabled: false
+      claimName: ""
