@@ -4,6 +4,36 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgraded 10x engine to 0.9.7"
+        - kind: changed
+          description: "Generalized git integration and added PVC volume mount support"
+    apiVersion: v2
+    appVersion: 0.9.7
+    created: "2026-03-10T10:32:59.910149998Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: c95b58efa60eb64fb986756a5de74fae373a34e3149adc9a493e5e01656a286a
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-0.9.7/filebeat-0.9.7.tgz
+    version: 0.9.7
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgraded 10x engine to 0.9.6"
         - kind: changed
           description: "Moved container images from ghcr.io to Docker Hub"
@@ -93,6 +123,36 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgraded 10x sidecar engine to 0.9.7"
+        - kind: changed
+          description: "Generalized git integration and added PVC volume mount support"
+    apiVersion: v2
+    appVersion: 8.5.1
+    created: "2026-03-10T10:33:00.062427924Z"
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: 23670e0313612be8661426d9ae152ba4653ac502e434f14e280e7f09c017e6dd
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.9.7/logstash-0.9.7.tgz
+    version: 0.9.7
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgraded 10x sidecar engine to 0.9.6"
         - kind: changed
           description: "Moved container images from ghcr.io to Docker Hub"
@@ -176,4 +236,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-03-06T18:25:25.369305938Z"
+generated: "2026-03-10T10:33:00.062459132Z"
