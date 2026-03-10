@@ -32,24 +32,31 @@ tenx:
   # If empty, will use default from 10x configuration
   runtimeName:
 
-  # Control fetching 10x config and/or symbols from github.
-  # If either config.enabled or symbols.enabled are true, the deployment will setup an
-  # init container to fetch config/symbols before the filebeat pod is live, and will share
-  # the result files via a shared volume 'shared-git-volume' that's mounted to the filebeat
-  # pod at '/etc/tenx/git'
+  # Git access token for fetching config/symbols from private Git repositories.
+  # Works with any Git provider (GitHub, GitLab, Bitbucket, self-hosted).
+  # When set, a Kubernetes Secret is created and injected via secretKeyRef.
   #
-  # To learn more about the 10x github config fetcher, see:
-  # https://github.com/log-10x/docker-images/tree/main/ext/github-config-fetcher
-  #
-  github:
-    # GitHub config fetcher init container image
-    image:
-      repository: "log10x/github-config-fetcher"
-      tag: "0.9.0"
-      pullPolicy: "IfNotPresent"
+  gitToken: ""
 
-    config:
-      # If config.enabled is true, the init container will fetch the config from github.
+  # Git config fetcher init container image
+  # Used to clone config/symbols repositories when git integration is enabled
+  #
+  configFetcherImage:
+    repository: "log10x/git-config-fetcher"
+    tag: "0.9.7"
+    pullPolicy: "IfNotPresent"
+
+  # Control fetching 10x config and/or symbols from a git repository or a volume mount.
+  # If either config or symbols git is enabled, the deployment will setup an init container
+  # to fetch config/symbols before the filebeat pod is live, and will share the result files
+  # via a shared volume 'tenx-git' that's mounted at '/etc/tenx/git'
+  #
+  # To learn more about the git config fetcher, see:
+  # https://github.com/log-10x/docker-images/tree/main/ext/git-config-fetcher
+  #
+  config:
+    git:
+      # If enabled, the init container will clone the config from a git repository.
       # The config will be at '/etc/tenx/git/config', and the TENX_CONFIG env var will
       # be set to point to it.
       #
@@ -57,34 +64,32 @@ tenx:
       #
       enabled: false
 
-      # Access token for GitHub.
-      # To learn more, see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+      # Full HTTPS URL of the git repository
       #
-      token: "MY-TOKEN"
-
-      # The repo to fetch the config from
-      #
-      repo: "user-name/config-repo"
+      url: ""
 
       # Optional - a branch to pull.
       # If omitted, the default repo branch will be used.
       # branch: "main"
 
-    symbols:
-      # If symbols.enabled is true, the init container will fetch the symbols from github.
-      # The symbols will be at '/etc/tenx/git/config/data/shared/symbols', and the environment
-      # variable TENX_SYMBOLS_PATH will be set to match
+    volume:
+      # Mount an existing PersistentVolumeClaim for config (for air-gapped environments
+      # or config managed outside of Git).
+      #
+      enabled: false
+      claimName: ""
+
+  symbols:
+    git:
+      # If enabled, the init container will clone the symbols from a git repository.
+      # The symbols will be at '/etc/tenx/git/config/data/shared/symbols', and the
+      # environment variable TENX_SYMBOLS_PATH will be set to match.
       #
       enabled: false
 
-      # Access token for GitHub.
-      # To learn more, see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+      # Full HTTPS URL of the git repository
       #
-      token: "MY-TOKEN"
-
-      # The repo to fetch the config from
-      #
-      repo: "user-name/symbols-repo"
+      url: ""
 
       # Optional - a branch to pull.
       # If omitted, the default repo branch will be used.
@@ -93,6 +98,13 @@ tenx:
       # Optional - a sub folder inside the repo where symbols were placed.
       # If omitted, the entire repo is considered as the symbols path.
       # path: "tenx/my-app/symbols"
+
+    volume:
+      # Mount an existing PersistentVolumeClaim for symbols (for air-gapped environments
+      # or symbols managed outside of Git).
+      #
+      enabled: false
+      claimName: ""
 
   # Used internally by the template to setup the correct read back unix socket from the 10x pipeline
   inputs:
