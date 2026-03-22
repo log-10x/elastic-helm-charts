@@ -305,7 +305,7 @@ tenx:
   # Log10x container image settings
   image:
     repository: "log10x/pipeline-10x"
-    tag: "0.9.7"
+    tag: "1.0.0"
     pullPolicy: "IfNotPresent"
 
   # Log10x API key (license)
@@ -340,7 +340,7 @@ tenx:
   #
   configFetcherImage:
     repository: "log10x/git-config-fetcher"
-    tag: "0.9.7"
+    tag: "1.0.0"
     pullPolicy: "IfNotPresent"
 
   # Control fetching 10x config and/or symbols from a git repository or a volume mount.

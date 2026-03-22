@@ -74,7 +74,7 @@ tenx:
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x sidecar container | `false` |
 | `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
-| `tenx.image.tag` | Log10x container image tag | `0.9.7` |
+| `tenx.image.tag` | Log10x container image tag | `1.0.0` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
@@ -82,7 +82,7 @@ tenx:
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
 | `tenx.gitToken` | Git access token for private repositories | `""` |
 | `tenx.configFetcherImage.repository` | Git config fetcher image | `log10x/git-config-fetcher` |
-| `tenx.configFetcherImage.tag` | Git config fetcher image tag | `0.9.7` |
+| `tenx.configFetcherImage.tag` | Git config fetcher image tag | `1.0.0` |
 | `tenx.config.git.enabled` | Enable fetching config from a git repository | `false` |
 | `tenx.config.git.url` | Full HTTPS URL of the config git repository | `""` |
 | `tenx.config.git.branch` | Branch to pull (optional) | `""` |
