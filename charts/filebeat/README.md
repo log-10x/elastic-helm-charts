@@ -81,7 +81,7 @@ tenx:
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.gitToken` | Git access token for private repositories | `""` |
 | `tenx.configFetcherImage.repository` | Git config fetcher image | `log10x/git-config-fetcher` |
-| `tenx.configFetcherImage.tag` | Git config fetcher image tag | `0.9.7` |
+| `tenx.configFetcherImage.tag` | Git config fetcher image tag | `1.0.0` |
 | `tenx.config.git.enabled` | Enable fetching config from a git repository | `false` |
 | `tenx.config.git.url` | Full HTTPS URL of the config git repository | `""` |
 | `tenx.config.git.branch` | Branch to pull (optional) | `""` |
