@@ -305,7 +305,8 @@ tenx:
   # Log10x container image settings
   image:
     repository: "log10x/pipeline-10x"
-    tag: "1.0.0"
+    # Defaults to the chart version when empty
+    tag: ""
     pullPolicy: "IfNotPresent"
 
   # Log10x API key (license)
