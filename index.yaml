@@ -4,6 +4,34 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgraded 10x engine to 1.0.6"
+    apiVersion: v2
+    appVersion: 1.0.6
+    created: "2026-03-26T16:59:13.0813812Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: 33e405bc486d72243a94fe18d605df5e9d41155967f173fdf331b3cbb00ea57c
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.0.6/filebeat-1.0.6.tgz
+    version: 1.0.6
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgraded 10x engine to 1.0.0"
     apiVersion: v2
     appVersion: 1.0.0
@@ -151,6 +179,34 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgraded 10x sidecar engine to 1.0.6"
+    apiVersion: v2
+    appVersion: 8.5.1
+    created: "2026-03-26T16:59:13.225523907Z"
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: 451a9dc82e030549cda9345e377ab1752df563e14609bdabaa9e2af599862640
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.0.6/logstash-1.0.6.tgz
+    version: 1.0.6
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgraded 10x sidecar engine to 1.0.0"
     apiVersion: v2
     appVersion: 8.5.1
@@ -292,4 +348,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-03-22T15:17:37.679973545Z"
+generated: "2026-03-26T16:59:13.225581675Z"
