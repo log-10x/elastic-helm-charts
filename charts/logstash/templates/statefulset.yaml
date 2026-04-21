@@ -297,7 +297,13 @@ spec:
         args:
           - "run"
           - "@run/input/forwarder/logstash/{{ .Values.tenx.kind }}"
-          - "@apps/edge/{{ if eq .Values.tenx.kind "report" }}reporter{{ else if eq .Values.tenx.kind "regulate" }}regulator{{ else }}optimizer{{ end }}"
+          {{- /*
+              Flat-topology app paths (post doc-refactor):
+                edge/reporter  → reporter
+                edge/regulator → regulator
+                edge/optimizer → compiler
+          */}}
+          - "@apps/{{ if eq .Values.tenx.kind "report" }}reporter{{ else if eq .Values.tenx.kind "regulate" }}regulator{{ else }}compiler{{ end }}"
         env:
           - name: TENX_API_KEY
           {{- if .Values.tenx.apiKey }}

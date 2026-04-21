@@ -249,12 +249,20 @@ spec:
           value: "/etc/tenx/symbols"
         {{- end }}
         - name: TENX_RUN_ARGS
+        {{- /*
+            App paths were flattened in the config repo's doc refactor:
+              apps/edge/reporter   → apps/reporter
+              apps/edge/regulator  → apps/regulator
+              apps/edge/optimizer  → apps/compiler
+            Keep the run/input/forwarder/... paths unchanged — those
+            are still per-forwarder subdirs and do not move.
+        */}}
         {{- if eq $.Values.tenx.kind "optimize" }}
-          value: "@run/input/forwarder/filebeat/optimize/config.yaml @apps/edge/optimizer"
+          value: "@run/input/forwarder/filebeat/optimize/config.yaml @apps/compiler"
         {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/edge/regulator"
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/regulator"
         {{- else if eq $.Values.tenx.kind "report" }}
-          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/edge/reporter"
+          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
         {{- end }}
         {{- end }}
 {{- if .Values.extraEnvs | default .Values.daemonset.extraEnvs }}
