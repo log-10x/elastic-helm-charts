@@ -250,19 +250,20 @@ spec:
         {{- end }}
         - name: TENX_RUN_ARGS
         {{- /*
-            Use the image-bundled edge/ app paths. The config repo's
-            doc-refactor is moving to flat apps/{reporter,regulator,
-            compiler}/, but the pipeline-10x runtime image still
-            ships only apps/{cloud,edge}/{reporter,regulator,optimizer}.
-            Switch to the flat paths once pipeline-10x is rebuilt
-            with the flat module tree.
+            Flat-topology app paths — the config repo's doc refactor
+            moved apps/edge/{reporter,regulator,optimizer} to flat
+            apps/{reporter,regulator,compiler}. The engine's include
+            resolver loads these from the cloned config repo at
+            /etc/tenx/git/config/apps/<kind>/config.yaml, which in
+            turn includes run/initialize/* enrichment modules + the
+            run/output/metric/log10x output.
         */}}
         {{- if eq $.Values.tenx.kind "optimize" }}
-          value: "@run/input/forwarder/filebeat/optimize/config.yaml @apps/edge/optimizer"
+          value: "@run/input/forwarder/filebeat/optimize/config.yaml @apps/compiler"
         {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/edge/regulator"
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/regulator"
         {{- else if eq $.Values.tenx.kind "report" }}
-          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/edge/reporter"
+          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
         {{- end }}
         {{- end }}
 {{- if .Values.extraEnvs | default .Values.daemonset.extraEnvs }}
