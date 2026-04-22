@@ -250,11 +250,20 @@ spec:
         {{- end }}
         - name: TENX_RUN_ARGS
         {{- if eq $.Values.tenx.kind "optimize" }}
-          value: "@run/input/forwarder/filebeat/optimize/config.yaml @apps/edge/optimizer"
+          # 1.0.7: optimize is a regulator flag, not a separate app.
+          # @apps/edge/optimizer no longer exists in the pipeline-10x:1.0.7
+          # image — the flat topology has apps/regulator only. The
+          # regulator pipeline reads regulatorOptimize (env var, below)
+          # and flips encodeObjects on when true.
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/regulator"
         {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/edge/regulator"
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/regulator"
         {{- else if eq $.Values.tenx.kind "report" }}
-          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/edge/reporter"
+          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
+        {{- end }}
+        {{- if eq $.Values.tenx.kind "optimize" }}
+        - name: regulatorOptimize
+          value: "true"
         {{- end }}
         {{- end }}
 {{- if .Values.extraEnvs | default .Values.daemonset.extraEnvs }}

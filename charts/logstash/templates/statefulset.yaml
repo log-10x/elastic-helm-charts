@@ -296,8 +296,17 @@ spec:
         imagePullPolicy: {{ .Values.tenx.image.pullPolicy }}
         args:
           - "run"
-          - "@run/input/forwarder/logstash/{{ .Values.tenx.kind }}"
-          - "@apps/edge/{{ if eq .Values.tenx.kind "report" }}reporter{{ else if eq .Values.tenx.kind "regulate" }}regulator{{ else }}optimizer{{ end }}"
+          {{- if eq .Values.tenx.kind "report" }}
+          - "@run/input/forwarder/logstash/report"
+          - "@apps/reporter"
+          {{- else }}
+          # kind=regulate or kind=optimize: both run the regulator
+          # pipeline against the flat apps/regulator module (1.0.7).
+          # @apps/edge/* is gone in 1.0.7 — optimize is now a regulator
+          # flag (regulatorOptimize env, below), not a separate app.
+          - "@run/input/forwarder/logstash/regulate"
+          - "@apps/regulator"
+          {{- end }}
         env:
           - name: TENX_API_KEY
           {{- if .Values.tenx.apiKey }}
@@ -307,6 +316,10 @@ spec:
                 key: api-key
           {{- else }}
             value: ""
+          {{- end }}
+          {{- if eq .Values.tenx.kind "optimize" }}
+          - name: regulatorOptimize
+            value: "true"
           {{- end }}
           {{- if .Values.tenx.runtimeName }}
           - name: TENX_RUNTIME_NAME
