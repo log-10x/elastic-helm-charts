@@ -300,12 +300,12 @@ spec:
           - "@run/input/forwarder/logstash/report"
           - "@apps/reporter"
           {{- else }}
-          # kind=regulate or kind=optimize: both run the regulator
-          # pipeline against the flat apps/regulator module (1.0.7).
-          # @apps/edge/* is gone in 1.0.7 — optimize is now a regulator
-          # flag (regulatorOptimize env, below), not a separate app.
+          # kind=regulate or kind=optimize: both run the reducer
+          # pipeline against the flat apps/reducer module (1.0.7).
+          # @apps/edge/* is gone in 1.0.7 — optimize is now a reducer
+          # flag (reducerOptimize env, below), not a separate app.
           - "@run/input/forwarder/logstash/regulate"
-          - "@apps/regulator"
+          - "@apps/reducer"
           {{- end }}
         env:
           - name: TENX_API_KEY
@@ -318,7 +318,7 @@ spec:
             value: ""
           {{- end }}
           {{- if eq .Values.tenx.kind "optimize" }}
-          - name: regulatorOptimize
+          - name: reducerOptimize
             value: "true"
           {{- end }}
           {{- if .Values.tenx.runtimeName }}

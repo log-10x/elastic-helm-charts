@@ -151,14 +151,14 @@ daemonset:
 
 See the [samples](../../samples/) directory for example configurations:
 - `filebeat-report.yaml` - Reporter mode for analytics
-- `filebeat-regulate.yaml` - Regulator mode for filtering
+- `filebeat-regulate.yaml` - Reducer mode for filtering
 - `filebeat-optimize.yaml` - Optimizer mode for full optimization
 
 ## Documentation
 
 - [Log10x Documentation](https://doc.log10x.com)
 - [Edge Reporter Deployment](https://doc.log10x.com/apps/edge/reporter/deploy/)
-- [Edge Regulator Deployment](https://doc.log10x.com/apps/edge/regulator/deploy/)
+- [Edge Reducer Deployment](https://doc.log10x.com/apps/reducer/deploy/)
 - [Edge Optimizer Deployment](https://doc.log10x.com/apps/edge/optimizer/deploy/)
 
 ## License

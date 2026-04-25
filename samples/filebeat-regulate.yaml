@@ -1,17 +1,17 @@
-# Sample values.yaml for deploying an 10x edge regulator with filebeat
+# Sample values.yaml for deploying an 10x edge reducer with filebeat
 #
 # Make sure to add your 10x license, as well as setup your backend info
 # in the filebeat.yml config
 #
 # For more info on deploying, see -
-# https://doc.log10x.com/apps/edge/regulator/deploy/#filebeat
+# https://doc.log10x.com/apps/reducer/deploy/#filebeat
 #
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
 
   kind: "regulate"
 
-  runtimeName: "my-filebeat-regulator"
+  runtimeName: "my-filebeat-reducer"
 
 daemonset:
   filebeatConfig:
