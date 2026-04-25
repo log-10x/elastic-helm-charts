@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.0.7
+version: 1.0.8
 appVersion: 8.5.1
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -23,8 +23,8 @@ annotations:
     - kind: changed
       description: "Upgraded 10x sidecar engine to 1.0.7 (pipeline-10x:1.0.7)"
     - kind: changed
-      description: "Launch args now target the flat apps/ topology (apps/reporter, apps/regulator) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
+      description: "Launch args now target the flat apps/ topology (apps/reporter, apps/reducer) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
     - kind: changed
-      description: "kind=optimize now launches @apps/regulator with regulatorOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a regulator flag now)"
+      description: "kind=optimize now launches @apps/reducer with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"
     - kind: changed
       description: "Default tenx sidecar image tag bumped to 1.0.7"
