@@ -292,7 +292,7 @@ spec:
       {{- end }}
       {{- if .Values.tenx.enabled }}
       - name: tenx
-        image: "{{ .Values.tenx.image.repository }}:{{ .Values.tenx.image.tag | default .Chart.Version }}"
+        image: "{{ .Values.tenx.image.repository }}:{{ .Values.tenx.image.tag | default "1.0.17" }}"
         imagePullPolicy: {{ .Values.tenx.image.pullPolicy }}
         args:
           - "run"
