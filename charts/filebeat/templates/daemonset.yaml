@@ -252,12 +252,12 @@ spec:
         {{- if eq $.Values.tenx.kind "optimize" }}
           # 1.0.7: optimize is a reducer flag, not a separate app.
           # @apps/edge/optimizer no longer exists in the pipeline-10x:1.0.7
-          # image — the flat topology has apps/reducer only. The
+          # image — the flat topology has apps/receiver only. The
           # reducer pipeline reads reducerOptimize (env var, below)
           # and flips encodeObjects on when true.
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/reducer"
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/receiver"
         {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/reducer"
+          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/receiver"
         {{- else if eq $.Values.tenx.kind "report" }}
           value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
         {{- end }}

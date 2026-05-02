@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.0.8
+version: 1.0.9
 appVersion: 1.0.7
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -23,6 +23,6 @@ annotations:
     - kind: changed
       description: "Upgraded 10x engine to 1.0.7"
     - kind: changed
-      description: "Launch args now target the flat apps/ topology (apps/reporter, apps/reducer) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
+      description: "Launch args now target the flat apps/ topology (apps/reporter, apps/receiver) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
     - kind: changed
-      description: "kind=optimize now launches @apps/reducer with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"
+      description: "kind=optimize now launches @apps/receiver with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"

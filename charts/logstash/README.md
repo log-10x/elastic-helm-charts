@@ -133,7 +133,7 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 
 - [Log10x Documentation](https://doc.log10x.com)
 - [Edge Reporter Deployment](https://doc.log10x.com/apps/edge/reporter/deploy/)
-- [Edge Reducer Deployment](https://doc.log10x.com/apps/reducer/deploy/)
+- [Edge Receiver Deployment](https://doc.log10x.com/apps/receiver/deploy/)
 - [Edge Optimizer Deployment](https://doc.log10x.com/apps/edge/optimizer/deploy/)
 
 ## License
