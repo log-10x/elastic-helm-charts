@@ -174,7 +174,7 @@ daemonset:
   # components that are part of the 10x pipeline deployment:
   #
   # 1. Monitor of the 10x internal log, and reporting it to elasticsearch
-  # 2. Setting up the JS processor (all apps) and 10x read-back ('reducer'/'optimizer')
+  # 2. Setting up the JS processor (all apps) and 10x read-back ('receiver'/'optimizer')
   #    for the integration between the 10x pipeline and filebeat
   # 3. Reporting 10x template objects to elasticsearch ('optimizer' only)
   #

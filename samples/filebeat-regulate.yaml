@@ -1,4 +1,4 @@
-# Sample values.yaml for deploying an 10x edge reducer with filebeat
+# Sample values.yaml for deploying an 10x edge receiver with filebeat
 #
 # Make sure to add your 10x license, as well as setup your backend info
 # in the filebeat.yml config
@@ -11,7 +11,7 @@ tenx:
 
   kind: "regulate"
 
-  runtimeName: "my-filebeat-reducer"
+  runtimeName: "my-filebeat-receiver"
 
 daemonset:
   filebeatConfig:
