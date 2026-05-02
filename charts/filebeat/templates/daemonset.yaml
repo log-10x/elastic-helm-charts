@@ -255,9 +255,9 @@ spec:
           # image — the flat topology has apps/receiver only. The
           # reducer pipeline reads reducerOptimize (env var, below)
           # and flips encodeObjects on when true.
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/receiver"
+          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
         {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/regulate/config.yaml @apps/receiver"
+          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
         {{- else if eq $.Values.tenx.kind "report" }}
           value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
         {{- end }}
