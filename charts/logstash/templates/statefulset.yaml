@@ -304,7 +304,7 @@ spec:
           # pipeline against the flat apps/receiver module (1.0.7).
           # @apps/edge/* is gone in 1.0.7 — optimize is now a reducer
           # flag (reducerOptimize env, below), not a separate app.
-          - "@run/input/forwarder/logstash/regulate"
+          - "@run/input/forwarder/logstash/receive"
           - "@apps/receiver"
           {{- end }}
         env:

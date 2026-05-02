@@ -7,8 +7,8 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.0.9
-appVersion: 1.0.7
+version: 1.0.10
+appVersion: 1.0.16
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
 sources:
