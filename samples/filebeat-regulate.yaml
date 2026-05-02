@@ -4,7 +4,7 @@
 # in the filebeat.yml config
 #
 # For more info on deploying, see -
-# https://doc.log10x.com/apps/reducer/deploy/#filebeat
+# https://doc.log10x.com/apps/receiver/deploy/#filebeat
 #
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
