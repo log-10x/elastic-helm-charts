@@ -6,6 +6,38 @@ entries:
         - kind: changed
           description: "Upgraded 10x engine to 1.0.7"
         - kind: changed
+          description: "Launch args now target the flat apps/ topology (apps/reporter, apps/receiver) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
+        - kind: changed
+          description: "kind=optimize now launches @apps/receiver with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"
+    apiVersion: v2
+    appVersion: 1.0.7
+    created: "2026-05-02T13:03:43.885703191Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: e76421001c99f2c439b82ba1547e29c8d181486b7a4e046278aebcc421f3072b
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.0.9/filebeat-1.0.9.tgz
+    version: 1.0.9
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgraded 10x engine to 1.0.7"
+        - kind: changed
           description: "Launch args now target the flat apps/ topology (apps/reporter, apps/reducer) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
         - kind: changed
           description: "kind=optimize now launches @apps/reducer with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"
@@ -240,6 +272,40 @@ entries:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-0.2.1/filebeat-0.2.1.tgz
     version: 0.2.1
   logstash:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgraded 10x sidecar engine to 1.0.7 (pipeline-10x:1.0.7)"
+        - kind: changed
+          description: "Launch args now target the flat apps/ topology (apps/reporter, apps/receiver) baked into the 1.0.7 image — replaces the 1.0.6 nested apps/edge/* paths"
+        - kind: changed
+          description: "kind=optimize now launches @apps/receiver with reducerOptimize=true env (replaces apps/edge/optimizer, which is absent in 1.0.7 — optimize is a reducer flag now)"
+        - kind: changed
+          description: "Default tenx sidecar image tag bumped to 1.0.7"
+    apiVersion: v2
+    appVersion: 8.5.1
+    created: "2026-05-02T13:03:44.090680741Z"
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: 2faaa3e71512ef228013fd03e8ab3104f1a59294c83e4ef5bfb2712c9dce94d1
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.0.9/logstash-1.0.9.tgz
+    version: 1.0.9
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -480,4 +546,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-04-25T14:29:53.800698237Z"
+generated: "2026-05-02T13:03:44.090774116Z"
