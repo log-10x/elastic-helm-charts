@@ -26,7 +26,5 @@ annotations:
       description: "Chart values use tenx-receive.js and the receive/tenxNix.yml input into the Receiver modules tree."
     - kind: changed
       description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
-    - kind: added
-      description: "Default container input excludes the chart's own pod logs (exclude_files for /var/log/containers/<release>-*.log) so Receiver-emitted output is not re-ingested as new input."
     - kind: changed
       description: "Sample values file is filebeat-receive.yaml for the default filter mode."
