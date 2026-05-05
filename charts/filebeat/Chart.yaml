@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.0.12
+version: 1.0.13
 appVersion: 1.0.19
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -21,6 +21,12 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Bumped engine appVersion to 1.0.19 with the Receiver app rename and renamed engine options (receiverOptimize, receiverReadOnly)."
+      description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
     - kind: changed
-      description: "Chart prose updated to reference Receiver instead of Reducer. The Prometheus label tenx_app value reducer is unchanged."
+      description: "Chart values use tenx-receive.js and the receive/tenxNix.yml input into the Receiver modules tree."
+    - kind: changed
+      description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
+    - kind: added
+      description: "Default container input excludes the chart's own pod logs (exclude_files for /var/log/containers/<release>-*.log) so Receiver-emitted output is not re-ingested as new input."
+    - kind: changed
+      description: "Sample values file is filebeat-receive.yaml for the default filter mode."

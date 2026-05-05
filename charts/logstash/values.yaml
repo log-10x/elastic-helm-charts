@@ -312,11 +312,11 @@ tenx:
   # Log10x API key (license)
   apiKey: ""
 
-  # Operation mode: report, regulate, or optimize
-  # - report: Analytics-only mode
-  # - regulate: Filtering mode
-  # - optimize: Full optimization
-  kind: "regulate"
+  # 10x Receiver mode. One of:
+  #   - "receive"  : filter mode, drops events per local/centralized policy
+  #   - "optimize" : filter and losslessly compact events for 50-65% volume reduction
+  #   - "report"   : read-only observation, emits metrics without modifying the event stream
+  kind: "receive"
 
   # Optional: name for this runtime instance
   runtimeName: ""

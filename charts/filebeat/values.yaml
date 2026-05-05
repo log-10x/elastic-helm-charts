@@ -25,8 +25,11 @@ tenx:
   # Deprecated: use apiKey instead. Kept for backwards compatibility.
   license: ""
 
-  # 10x mode - "report", "regulate" or "optimize"
-  kind: "regulate"
+  # 10x Receiver mode. One of:
+  #   - "receive"  : filter mode, drops events per local/centralized policy
+  #   - "optimize" : filter and losslessly compact events for 50-65% volume reduction
+  #   - "report"   : read-only observation, emits metrics without modifying the event stream
+  kind: "receive"
 
   # Specify name for the 10x runtime
   # If empty, will use default from 10x configuration
@@ -106,15 +109,17 @@ tenx:
       enabled: false
       claimName: ""
 
-  # Used internally by the template to setup the correct read back unix socket from the 10x pipeline
+  # Read-back Unix socket configs into the 10x Receiver, one per mode that loops events back.
+  # The template selects the entry matching tenx.kind. Report mode does not loop back.
   inputs:
     optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
-    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/regulate/tenxNix.yml
+    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/receive/tenxNix.yml
 
-  # Used internally by the template the setup the correct way filebeat will emit events into the 10x pipeline
+  # Filebeat script processors that pipe collected events into the 10x Receiver.
+  # The template selects the entry matching tenx.kind.
   processors:
     optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-optimize.js
-    regulate: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-regulate.js
+    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-receive.js
     report: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-report.js
 
 daemonset:
@@ -199,6 +204,11 @@ daemonset:
       - type: container
         paths:
           - /var/log/containers/*.log
+        # Exclude this chart's own pod logs so events the Receiver writes
+        # to filebeat's stdout (compact-form events tagged with templateHash
+        # or pass-through events) are not re-ingested as new input on the
+        # next tail cycle.
+        exclude_files: ['/var/log/containers/{{ include "filebeat.fullname" . }}-.*\.log$']
         processors:
         - add_kubernetes_metadata:
             host: ${NODE_NAME}

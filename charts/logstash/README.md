@@ -38,7 +38,7 @@ Enable the Log10x sidecar by configuring the `tenx` section in your values file:
 tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
-  kind: "regulate"  # Options: report, regulate, optimize
+  kind: "receive"  # Options: report, receive, optimize
   runtimeName: "my-logstash-instance"
 
   # Optional: Git access token for private repositories
@@ -62,9 +62,9 @@ tenx:
 
 | Mode | Description |
 |------|-------------|
-| `report` | Analytics-only mode - generates cost and usage metrics without modifying logs |
-| `regulate` | Filtering mode - reduces log volume based on configured rules |
-| `optimize` | Full optimization - reduces log volume while preserving information |
+| `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
+| `receive` | Filter mode. Drops events per local or centralized policy |
+| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
 
 ## Configuration
 
@@ -77,7 +77,7 @@ tenx:
 | `tenx.image.tag` | Log10x container image tag (defaults to chart version) | `""` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
-| `tenx.kind` | Operation mode: `report`, `regulate`, or `optimize` | `regulate` |
+| `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
 | `tenx.gitToken` | Git access token for private repositories | `""` |
@@ -132,9 +132,7 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 ## Documentation
 
 - [Log10x Documentation](https://doc.log10x.com)
-- [Edge Reporter Deployment](https://doc.log10x.com/apps/edge/reporter/deploy/)
-- [Edge Receiver Deployment](https://doc.log10x.com/apps/receiver/deploy/)
-- [Edge Optimizer Deployment](https://doc.log10x.com/apps/edge/optimizer/deploy/)
+- [Receiver Deployment](https://doc.log10x.com/apps/receiver/deploy/)
 
 ## License
 
