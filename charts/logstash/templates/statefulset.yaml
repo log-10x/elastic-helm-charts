@@ -292,20 +292,15 @@ spec:
       {{- end }}
       {{- if .Values.tenx.enabled }}
       - name: tenx
-        image: "{{ .Values.tenx.image.repository }}:{{ .Values.tenx.image.tag | default "1.0.19" }}"
+        image: "{{ .Values.tenx.image.repository }}:{{ .Values.tenx.image.tag | default "1.0.20" }}"
         imagePullPolicy: {{ .Values.tenx.image.pullPolicy }}
         args:
           - "run"
-          {{- if eq .Values.tenx.kind "report" }}
-          - "@run/input/forwarder/logstash/report"
-          - "@apps/reporter"
-          {{- else }}
-          # kind=regulate or kind=optimize: both run the receiver
-          # pipeline against the flat apps/receiver module (1.0.7).
-          # @apps/edge/* is gone in 1.0.7 — optimize is now a receiver
-          # flag (receiverOptimize env, below), not a separate app.
           - "@run/input/forwarder/logstash/receive"
           - "@apps/receiver"
+          {{- if eq .Values.tenx.kind "report" }}
+          - "receiverReadOnly"
+          - "true"
           {{- end }}
         env:
           - name: TENX_API_KEY

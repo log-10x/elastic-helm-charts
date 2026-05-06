@@ -44,7 +44,7 @@ Enable Log10x by setting `tenx.enabled: true` in your values file:
 tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
-  kind: "regulate"  # Options: report, regulate, optimize
+  kind: "receive"  # Options: report, receive, optimize
   runtimeName: "my-instance"
 
   # Optional: GitOps configuration
@@ -59,16 +59,14 @@ tenx:
 
 | Mode | Description |
 |------|-------------|
-| `report` | Analytics-only mode - generates cost and usage metrics without modifying logs |
-| `regulate` | Filtering mode - reduces log volume based on configured rules |
-| `optimize` | Full optimization - reduces log volume while preserving information |
+| `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
+| `receive` | Filter mode. Drops events per local or centralized policy |
+| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
 
 ## Documentation
 
 - [Log10x Documentation](https://doc.log10x.com)
-- [Edge Reporter Deployment](https://doc.log10x.com/apps/edge/reporter/deploy/)
-- [Edge Receiver Deployment](https://doc.log10x.com/apps/receiver/deploy/)
-- [Edge Optimizer Deployment](https://doc.log10x.com/apps/edge/optimizer/deploy/)
+- [Receiver Deployment](https://doc.log10x.com/apps/receiver/deploy/)
 
 ## License
 

@@ -1,4 +1,4 @@
-# Sample values.yaml for deploying an 10x edge receiver with filebeat
+# Sample values.yaml for deploying a 10x Receiver with filebeat in filter mode.
 #
 # Make sure to add your 10x license, as well as setup your backend info
 # in the filebeat.yml config
@@ -9,7 +9,7 @@
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
 
-  kind: "regulate"
+  kind: "receive"
 
   runtimeName: "my-filebeat-receiver"
 

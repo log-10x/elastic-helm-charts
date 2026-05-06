@@ -249,17 +249,10 @@ spec:
           value: "/etc/tenx/symbols"
         {{- end }}
         - name: TENX_RUN_ARGS
-        {{- if eq $.Values.tenx.kind "optimize" }}
-          # 1.0.7: optimize is a receiver flag, not a separate app.
-          # @apps/edge/optimizer no longer exists in the pipeline-10x:1.0.7
-          # image — the flat topology has apps/receiver only. The
-          # receiver pipeline reads receiverOptimize (env var, below)
-          # and flips encodeObjects on when true.
+        {{- if eq $.Values.tenx.kind "report" }}
+          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver receiverReadOnly true"
+        {{- else }}
           value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
-        {{- else if eq $.Values.tenx.kind "regulate" }}
-          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
-        {{- else if eq $.Values.tenx.kind "report" }}
-          value: "@run/input/forwarder/filebeat/report/config.yaml @apps/reporter"
         {{- end }}
         {{- if eq $.Values.tenx.kind "optimize" }}
         - name: receiverOptimize

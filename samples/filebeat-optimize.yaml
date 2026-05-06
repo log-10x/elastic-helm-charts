@@ -1,10 +1,12 @@
-# Sample values.yaml for deploying an 10x edge optimizer with filebeat
+# Sample values.yaml for deploying a 10x Receiver with filebeat in optimize mode.
+# Optimize mode filters events and losslessly compacts the survivors for 50-65%
+# volume reduction.
 #
 # Make sure to add your 10x license, as well as setup your backend info
 # in the filebeat.yml config
 #
 # For more info on deploying, see -
-# https://doc.log10x.com/apps/edge/optimizer/deploy/#filebeat
+# https://doc.log10x.com/apps/receiver/deploy/#filebeat
 #
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
