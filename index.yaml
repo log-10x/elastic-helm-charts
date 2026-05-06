@@ -13,6 +13,40 @@ entries:
           description: "Sample values file is filebeat-receive.yaml for the default filter mode."
     apiVersion: v2
     appVersion: 1.0.20
+    created: "2026-05-06T10:14:06.827103986Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: 0b5b60999aa5f071db118a0ecb50945f25690f827fdb721bad3edc523faa4b45
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.0.20/filebeat-1.0.20.tgz
+    version: 1.0.20
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
+          description: "Chart values use tenx-receive.js and the receive/tenxNix.yml input into the Receiver modules tree."
+        - kind: changed
+          description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
+        - kind: changed
+          description: "Sample values file is filebeat-receive.yaml for the default filter mode."
+    apiVersion: v2
+    appVersion: 1.0.20
     created: "2026-05-06T09:44:23.697494365Z"
     description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
     digest: 7459ae41b72cae48ddad50046ba804c581c2e326c28dec45df596f8d8246c649
@@ -400,6 +434,36 @@ entries:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-0.2.1/filebeat-0.2.1.tgz
     version: 0.2.1
   logstash:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
+          description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
+    apiVersion: v2
+    appVersion: 8.5.1
+    created: "2026-05-06T10:14:07.056116263Z"
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: d77cc3e5eeda804793e6136f1ef9cc1fe4187c1e64ad5ae04d484790f0349339
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.0.20/logstash-1.0.20.tgz
+    version: 1.0.20
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -802,4 +866,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-05-06T09:44:23.881487779Z"
+generated: "2026-05-06T10:14:07.056349521Z"
