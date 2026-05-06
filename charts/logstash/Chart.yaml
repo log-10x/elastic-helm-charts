@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.0.13
+version: 1.0.20
 appVersion: 8.5.1
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
