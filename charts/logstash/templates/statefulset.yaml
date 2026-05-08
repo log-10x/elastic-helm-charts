@@ -298,7 +298,7 @@ spec:
           - "run"
           - "@run/input/forwarder/logstash/receive"
           - "@apps/receiver"
-          {{- if eq .Values.tenx.kind "report" }}
+          {{- if .Values.tenx.readOnly }}
           - "receiverReadOnly"
           - "true"
           {{- end }}
@@ -312,7 +312,7 @@ spec:
           {{- else }}
             value: ""
           {{- end }}
-          {{- if eq .Values.tenx.kind "optimize" }}
+          {{- if .Values.tenx.optimize }}
           - name: receiverOptimize
             value: "true"
           {{- end }}

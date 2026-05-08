@@ -11,7 +11,7 @@
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
 
-  kind: "optimize"
+  optimize: true
 
   runtimeName: "my-filebeat-optimizer"
 
@@ -20,7 +20,7 @@ daemonset:
     filebeat.yml: |
       filebeat.config.inputs:
         enabled: true
-        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+        path: {{ .Values.tenx.inputs.optimize }}
 
       filebeat.inputs:
       - type: filestream
@@ -40,7 +40,7 @@ daemonset:
                 logs_path: "/var/log/containers/"
         - script:
             lang: javascript
-            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+            file: {{ .Values.tenx.processors.optimize }}
 
       output.elasticsearch:
         host: '${NODE_NAME}'

@@ -9,7 +9,7 @@
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
 
-  kind: "receive"
+  # Default mode (filter only) — leave optimize and readOnly unset/false.
 
   runtimeName: "my-filebeat-receiver"
 
@@ -18,7 +18,7 @@ daemonset:
     filebeat.yml: |
       filebeat.config.inputs:
         enabled: true
-        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+        path: {{ .Values.tenx.inputs.receive }}
 
       filebeat.inputs:
       - type: filestream
@@ -38,7 +38,7 @@ daemonset:
                 logs_path: "/var/log/containers/"
         - script:
             lang: javascript
-            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+            file: {{ .Values.tenx.processors.receive }}
 
       output.elasticsearch:
         host: '${NODE_NAME}'

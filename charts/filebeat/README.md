@@ -38,7 +38,8 @@ The Log10x engine is integrated directly into the Filebeat container image. Enab
 tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
-  kind: "receive"  # Options: report, receive, optimize
+  # optimize: false  # losslessly compact events for 50-65% volume reduction
+  # readOnly: false  # observe-only, no return loop (mutually exclusive with optimize)
   variant: "jit"    # Options: jit, native
   runtimeName: "my-filebeat-instance"
 
@@ -61,11 +62,13 @@ tenx:
 
 ### Log10x Modes
 
-| Mode | Description |
-|------|-------------|
-| `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
-| `receive` | Filter mode. Drops events per local or centralized policy |
-| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
+| Flags | Mode | Description |
+|-------|------|-------------|
+| both `false` (default) | filter | Drops events per local or centralized policy |
+| `optimize: true` | optimize | Filter and losslessly compact events for 50-65% volume reduction |
+| `readOnly: true` | report | Read-only observation. Emits cost and usage metrics without modifying the event stream |
+
+`tenx.optimize` and `tenx.readOnly` are mutually exclusive.
 
 ## Configuration
 
@@ -77,7 +80,8 @@ tenx:
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.debug` | Enable debug logging | `false` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
-| `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
+| `tenx.optimize` | Losslessly compact events for 50-65% volume reduction (mutually exclusive with `readOnly`) | `false` |
+| `tenx.readOnly` | Read-only mode: observe events and emit metrics without modifying the stream (mutually exclusive with `optimize`) | `false` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.gitToken` | Git access token for private repositories | `""` |
 | `tenx.configFetcherImage.repository` | Git config fetcher image | `log10x/git-config-fetcher` |
@@ -122,7 +126,7 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 - The Log10x engine is bundled in the `log10x/filebeat-10x` image
 - Default configuration sends logs to Elasticsearch using credentials from `elasticsearch-master-credentials` secret
 - Kubernetes metadata enrichment is enabled by default
-- The `receive` and `optimize` modes use a JavaScript processor to integrate with the Log10x pipeline
+- All modes use a JavaScript processor to integrate with the Log10x pipeline; the read-back input is omitted in `readOnly` mode
 
 ### Output Limitation
 

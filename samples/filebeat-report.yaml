@@ -11,7 +11,7 @@
 tenx:
   apiKey: "<YOUR-10X-API-KEY-HERE>"
 
-  kind: "report"
+  readOnly: true
 
   runtimeName: "my-filebeat-reporter"
 
@@ -36,7 +36,7 @@ daemonset:
                 logs_path: "/var/log/containers/"
         - script:
             lang: javascript
-            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+            file: {{ .Values.tenx.processors.report }}
 
       output.elasticsearch:
         host: '${NODE_NAME}'

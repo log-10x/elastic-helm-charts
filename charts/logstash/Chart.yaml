@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.0.20
+version: 1.0.21
 appVersion: 8.5.1
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -21,6 +21,6 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
-    - kind: changed
-      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
+      description: "Replaced tenx.kind with tenx.optimize and tenx.readOnly boolean flags, aligning with the fluent-bit chart. Defaults are both false (filter mode)."
+    - kind: added
+      description: "Pre-render validation rejects setting both tenx.optimize and tenx.readOnly to true."

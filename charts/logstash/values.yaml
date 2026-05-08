@@ -312,11 +312,17 @@ tenx:
   # Log10x API key (license)
   apiKey: ""
 
-  # 10x Receiver mode. One of:
-  #   - "receive"  : filter mode, drops events per local/centralized policy
-  #   - "optimize" : filter and losslessly compact events for 50-65% volume reduction
-  #   - "report"   : read-only observation, emits metrics without modifying the event stream
-  kind: "receive"
+  # Enable optimization mode to losslessly compact events for 50-65% volume reduction.
+  # When false (default), the Receiver filters events but emits them in their original form.
+  # Mutually exclusive with `readOnly`.
+  optimize: false
+
+  # Enable read-only mode (non-intervening reporter). When true, 10x reads,
+  # aggregates and publishes TenXSummary metrics to the log10x backend, but
+  # does NOT write events back. Events flow through Logstash unchanged to
+  # the original outputs.
+  # Mutually exclusive with `optimize`.
+  readOnly: false
 
   # Optional: name for this runtime instance
   runtimeName: ""

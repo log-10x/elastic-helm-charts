@@ -249,12 +249,12 @@ spec:
           value: "/etc/tenx/symbols"
         {{- end }}
         - name: TENX_RUN_ARGS
-        {{- if eq $.Values.tenx.kind "report" }}
+        {{- if .Values.tenx.readOnly }}
           value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver receiverReadOnly true"
         {{- else }}
           value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
         {{- end }}
-        {{- if eq $.Values.tenx.kind "optimize" }}
+        {{- if .Values.tenx.optimize }}
         - name: receiverOptimize
           value: "true"
         {{- end }}

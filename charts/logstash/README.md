@@ -38,7 +38,8 @@ Enable the Log10x sidecar by configuring the `tenx` section in your values file:
 tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
-  kind: "receive"  # Options: report, receive, optimize
+  # optimize: false  # losslessly compact events for 50-65% volume reduction
+  # readOnly: false  # observe-only, no return loop (mutually exclusive with optimize)
   runtimeName: "my-logstash-instance"
 
   # Optional: Git access token for private repositories
@@ -60,11 +61,13 @@ tenx:
 
 ### Log10x Modes
 
-| Mode | Description |
-|------|-------------|
-| `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
-| `receive` | Filter mode. Drops events per local or centralized policy |
-| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
+| Flags | Mode | Description |
+|-------|------|-------------|
+| both `false` (default) | filter | Drops events per local or centralized policy |
+| `optimize: true` | optimize | Filter and losslessly compact events for 50-65% volume reduction |
+| `readOnly: true` | report | Read-only observation. Emits cost and usage metrics without modifying the event stream |
+
+`tenx.optimize` and `tenx.readOnly` are mutually exclusive.
 
 ## Configuration
 
@@ -77,7 +80,8 @@ tenx:
 | `tenx.image.tag` | Log10x container image tag (defaults to chart version) | `""` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
-| `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
+| `tenx.optimize` | Losslessly compact events for 50-65% volume reduction (mutually exclusive with `readOnly`) | `false` |
+| `tenx.readOnly` | Read-only mode: observe events and emit metrics without modifying the stream (mutually exclusive with `optimize`) | `false` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
 | `tenx.gitToken` | Git access token for private repositories | `""` |

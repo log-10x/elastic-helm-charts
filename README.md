@@ -44,7 +44,8 @@ Enable Log10x by setting `tenx.enabled: true` in your values file:
 tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
-  kind: "receive"  # Options: report, receive, optimize
+  # optimize: false  # losslessly compact events for 50-65% volume reduction
+  # readOnly: false  # observe-only, no return loop (mutually exclusive with optimize)
   runtimeName: "my-instance"
 
   # Optional: GitOps configuration
@@ -57,11 +58,13 @@ tenx:
 
 ### Log10x Modes
 
-| Mode | Description |
-|------|-------------|
-| `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
-| `receive` | Filter mode. Drops events per local or centralized policy |
-| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
+| Flags | Mode | Description |
+|-------|------|-------------|
+| both `false` (default) | filter | Drops events per local or centralized policy |
+| `optimize: true` | optimize | Filter and losslessly compact events for 50-65% volume reduction |
+| `readOnly: true` | report | Read-only observation. Emits cost and usage metrics without modifying the event stream |
+
+`tenx.optimize` and `tenx.readOnly` are mutually exclusive.
 
 ## Documentation
 

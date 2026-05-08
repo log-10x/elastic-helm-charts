@@ -25,11 +25,17 @@ tenx:
   # Deprecated: use apiKey instead. Kept for backwards compatibility.
   license: ""
 
-  # 10x Receiver mode. One of:
-  #   - "receive"  : filter mode, drops events per local/centralized policy
-  #   - "optimize" : filter and losslessly compact events for 50-65% volume reduction
-  #   - "report"   : read-only observation, emits metrics without modifying the event stream
-  kind: "receive"
+  # Enable optimization mode to losslessly compact events for 50-65% volume reduction.
+  # When false (default), the Receiver filters events but emits them in their original form.
+  # Mutually exclusive with `readOnly`.
+  optimize: false
+
+  # Enable read-only mode (non-intervening reporter). When true, 10x reads,
+  # aggregates and publishes TenXSummary metrics to the log10x backend, but
+  # does NOT write events back. Events flow through Filebeat unchanged to
+  # the original outputs — no return loop, no readback Unix socket.
+  # Mutually exclusive with `optimize`.
+  readOnly: false
 
   # Specify name for the 10x runtime
   # If empty, will use default from 10x configuration
@@ -109,14 +115,16 @@ tenx:
       enabled: false
       claimName: ""
 
-  # Read-back Unix socket configs into the 10x Receiver, one per mode that loops events back.
-  # The template selects the entry matching tenx.kind. Report mode does not loop back.
+  # Read-back Unix socket configs into the 10x Receiver, one per mode that loops
+  # events back. The template picks `optimize` when tenx.optimize is true,
+  # otherwise `receive`. Read-only mode has no return loop, so neither is used.
   inputs:
     optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
     receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/receive/tenxNix.yml
 
   # Filebeat script processors that pipe collected events into the 10x Receiver.
-  # The template selects the entry matching tenx.kind.
+  # The template picks `report` when tenx.readOnly is true, `optimize` when
+  # tenx.optimize is true, otherwise `receive`.
   processors:
     optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-optimize.js
     receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-receive.js
@@ -186,10 +194,14 @@ daemonset:
   filebeatConfig:
     filebeat.yml: |
 
-      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
+      {{- if and .Values.tenx.enabled (not .Values.tenx.readOnly) }}
       filebeat.config.inputs:
         enabled: true
-        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+        {{- if .Values.tenx.optimize }}
+        path: {{ .Values.tenx.inputs.optimize }}
+        {{- else }}
+        path: {{ .Values.tenx.inputs.receive }}
+        {{- end }}
       {{- end }}
 
       filebeat.inputs:
@@ -213,7 +225,13 @@ daemonset:
         {{- if .Values.tenx.enabled }}
         - script:
             lang: javascript
-            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+            {{- if .Values.tenx.readOnly }}
+            file: {{ .Values.tenx.processors.report }}
+            {{- else if .Values.tenx.optimize }}
+            file: {{ .Values.tenx.processors.optimize }}
+            {{- else }}
+            file: {{ .Values.tenx.processors.receive }}
+            {{- end }}
         {{- end }}
 
       output.elasticsearch:
@@ -228,7 +246,7 @@ daemonset:
         - index: "tenx_internal"
           when.equals:
             fields.log_type: "tenx_internal"
-        {{- if eq .Values.tenx.kind "optimize" }}
+        {{- if .Values.tenx.optimize }}
         - index: "l1es_dml"
           when.has_fields: ["template", "templateHash"]
         {{- end }}
