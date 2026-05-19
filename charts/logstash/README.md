@@ -37,7 +37,7 @@ Enable the Log10x sidecar by configuring the `tenx` section in your values file:
 ```yaml
 tenx:
   enabled: true
-  apiKey: "YOUR-LICENSE-KEY"
+  licenseJwt: "YOUR-LICENSE-JWT"   # download from https://console.log10x.com
   # optimize: false  # losslessly compact events for 50-65% volume reduction
   # readOnly: false  # observe-only, no return loop (mutually exclusive with optimize)
   runtimeName: "my-logstash-instance"
@@ -79,7 +79,8 @@ tenx:
 | `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
 | `tenx.image.tag` | Log10x container image tag (defaults to chart version) | `""` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
-| `tenx.apiKey` | Log10x API key (license) | `""` |
+| `tenx.licenseJwt` | Log10x license JWT (download from [console.log10x.com](https://console.log10x.com)) | `""` |
+| `tenx.licenseSecret` | Name of an existing K8s Secret with key `license-jwt`; chart uses it instead of creating one from `licenseJwt` | `""` |
 | `tenx.optimize` | Losslessly compact events for 50-65% volume reduction (mutually exclusive with `readOnly`) | `false` |
 | `tenx.readOnly` | Read-only mode: observe events and emit metrics without modifying the stream (mutually exclusive with `optimize`) | `false` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |

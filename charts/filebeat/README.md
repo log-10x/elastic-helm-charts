@@ -37,7 +37,7 @@ The Log10x engine is integrated directly into the Filebeat container image. Enab
 ```yaml
 tenx:
   enabled: true
-  apiKey: "YOUR-LICENSE-KEY"
+  licenseJwt: "YOUR-LICENSE-JWT"   # download from https://console.log10x.com
   # optimize: false  # losslessly compact events for 50-65% volume reduction
   # readOnly: false  # observe-only, no return loop (mutually exclusive with optimize)
   variant: "jit"    # Options: jit, native
@@ -79,7 +79,8 @@ tenx:
 | `tenx.enabled` | Enable Log10x engine | `true` |
 | `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
 | `tenx.debug` | Enable debug logging | `false` |
-| `tenx.apiKey` | Log10x API key (license) | `""` |
+| `tenx.licenseJwt` | Log10x license JWT (download from [console.log10x.com](https://console.log10x.com)) | `""` |
+| `tenx.licenseSecret` | Name of an existing K8s Secret with key `license-jwt`; chart uses it instead of creating one from `licenseJwt` | `""` |
 | `tenx.optimize` | Losslessly compact events for 50-65% volume reduction (mutually exclusive with `readOnly`) | `false` |
 | `tenx.readOnly` | Read-only mode: observe events and emit metrics without modifying the stream (mutually exclusive with `optimize`) | `false` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |

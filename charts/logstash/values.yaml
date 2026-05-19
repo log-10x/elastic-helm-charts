@@ -309,8 +309,12 @@ tenx:
     tag: ""
     pullPolicy: "IfNotPresent"
 
-  # Log10x API key (license)
-  apiKey: ""
+  # Log10x license JWT (required for the engine to start). Download from
+  # https://console.log10x.com. Provide one of:
+  #   licenseJwt: the JWT string — the chart creates a managed Secret from it.
+  #   licenseSecret: the name of an existing K8s Secret with key `license-jwt`.
+  licenseJwt: ""
+  licenseSecret: ""
 
   # Enable optimization mode to losslessly compact events for 50-65% volume reduction.
   # When false (default), the Receiver filters events but emits them in their original form.

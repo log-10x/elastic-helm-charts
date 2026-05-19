@@ -147,6 +147,12 @@ spec:
         {{- if .Values.tenx.enabled }}
         - name: tenx-sockets
           emptyDir: {}
+        - name: tenx-license
+          secret:
+            secretName: {{ default (printf "%s-tenx-license" (include "logstash.fullname" .)) .Values.tenx.licenseSecret }}
+            items:
+              - key: license-jwt
+                path: license.jwt
         {{- if or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled }}
         - name: tenx-git
           emptyDir: {}
@@ -303,15 +309,8 @@ spec:
           - "true"
           {{- end }}
         env:
-          - name: TENX_API_KEY
-          {{- if .Values.tenx.apiKey }}
-            valueFrom:
-              secretKeyRef:
-                name: {{ template "logstash.fullname" . }}-tenx-api-key
-                key: api-key
-          {{- else }}
-            value: ""
-          {{- end }}
+          - name: TENX_LICENSE_FILE
+            value: /etc/tenx/license/license.jwt
           {{- if .Values.tenx.optimize }}
           - name: receiverOptimize
             value: "true"
@@ -339,6 +338,9 @@ spec:
         volumeMounts:
           - name: tenx-sockets
             mountPath: /tmp
+          - name: tenx-license
+            mountPath: /etc/tenx/license
+            readOnly: true
           {{- if or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled }}
           - name: tenx-git
             mountPath: /etc/tenx/git

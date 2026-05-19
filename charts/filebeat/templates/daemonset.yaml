@@ -115,6 +115,14 @@ spec:
       - name: varrundockersock
         hostPath:
           path: /var/run/docker.sock
+    {{- if .Values.tenx.enabled }}
+      - name: tenx-license
+        secret:
+          secretName: {{ default (printf "%s-tenx-license" (include "filebeat.fullname" .)) .Values.tenx.licenseSecret }}
+          items:
+            - key: license-jwt
+              path: license.jwt
+    {{- end }}
     {{- if $tenxGitInit }}
       - name: tenx-git
         emptyDir: {}
@@ -221,15 +229,8 @@ spec:
         - name: TENX_LOG_PATH
           value: /etc/tenx/log/
         {{- if .Values.tenx.enabled }}
-        - name: TENX_API_KEY
-        {{- if .Values.tenx.apiKey }}
-          valueFrom:
-            secretKeyRef:
-              name: {{ template "filebeat.fullname" . }}-tenx-api-key
-              key: api-key
-        {{- else }}
-          value: ""
-        {{- end }}
+        - name: TENX_LICENSE_FILE
+          value: /etc/tenx/license/license.jwt
         {{- if .Values.tenx.runtimeName }}
         - name: TENX_RUNTIME_NAME
           value: {{ .Values.tenx.runtimeName | quote }}
@@ -301,6 +302,11 @@ spec:
         - name: varrundockersock
           mountPath: /var/run/docker.sock
           readOnly: true
+      {{- if .Values.tenx.enabled }}
+        - name: tenx-license
+          mountPath: /etc/tenx/license
+          readOnly: true
+      {{- end }}
       {{- if $tenxGitInit }}
         - name: tenx-git
           mountPath: /etc/tenx/git
