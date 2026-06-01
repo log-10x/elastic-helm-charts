@@ -42,6 +42,15 @@ tenx:
   # If empty, will use default from 10x configuration
   runtimeName:
 
+  # Run the 10x engine airgapped — license is verified locally and no outbound
+  # calls are made to the 10x SaaS gateway (no startup validation, no metrics
+  # reporting, no user-attribute enrichment). Use for clusters that have no path
+  # to the vendor SaaS (security policy, isolated network, etc.).
+  #
+  # Note: 'demo' and 'limited' license types cannot run airgapped — if set with
+  # one of these types, the engine logs a warning and runs in online mode anyway.
+  airgapped: false
+
   # Git access token for fetching config/symbols from private Git repositories.
   # Works with any Git provider (GitHub, GitLab, Bitbucket, self-hosted).
   # When set, a Kubernetes Secret is created and injected via secretKeyRef.
@@ -119,9 +128,11 @@ tenx:
   # Read-back Unix socket configs into the 10x Receiver, one per mode that loops
   # events back. The template picks `optimize` when tenx.optimize is true,
   # otherwise `receive`. Read-only mode has no return loop, so neither is used.
+  # Both modes share the same `conf/tenxNix.yml` snippet today — the engine
+  # picks the actual emit shape from `outputWriteTemplates`.
   inputs:
-    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
-    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/receive/tenxNix.yml
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/conf/tenxNix.yml
+    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/conf/tenxNix.yml
 
   # Filebeat script processors that pipe collected events into the 10x Receiver.
   # The template picks `report` when tenx.readOnly is true, `optimize` when

@@ -331,6 +331,15 @@ tenx:
   # Optional: name for this runtime instance
   runtimeName: ""
 
+  # Run the 10x engine airgapped — license is verified locally and no outbound
+  # calls are made to the 10x SaaS gateway (no startup validation, no metrics
+  # reporting, no user-attribute enrichment). Use for clusters that have no path
+  # to the vendor SaaS (security policy, isolated network, etc.).
+  #
+  # Note: 'demo' and 'limited' license types cannot run airgapped — if set with
+  # one of these types, the engine logs a warning and runs in online mode anyway.
+  airgapped: false
+
   # Resource limits for Log10x sidecar
   resources:
     limits:
