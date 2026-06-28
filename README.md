@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This repository contains [Helm](https://helm.sh/) charts for Elastic Stack components with integrated [Log10x](https://log10x.com) sidecar support.
+This repository contains [Helm](https://helm.sh/) charts for Elastic Stack components with integrated [Log10x](https://www.log10x.com/?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=hero) sidecar support.
 
 **Forked from:** [elastic/helm-charts](https://github.com/elastic/helm-charts)
 
@@ -88,7 +88,7 @@ itself is open source, **using Log10x requires a commercial license**.
 - A valid Log10x API key is required to run the deployed software
 
 **Get Started:**
-- [Log10x Pricing](https://log10x.com/pricing)
+- [Log10x Pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=footer)
 - [Documentation](https://doc.log10x.com)
 - [Contact Sales](mailto:sales@log10x.com)
 
