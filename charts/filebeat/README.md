@@ -168,4 +168,4 @@ See the [samples](../../samples/) directory for example configurations:
 
 This chart is licensed under the Apache License 2.0.
 
-**Note:** The Log10x engine requires a commercial license. See [Log10x Pricing](https://log10x.com/pricing) for details.
+**Note:** The Log10x engine requires a commercial license. See [Log10x Pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=inline) for details.
