@@ -24,7 +24,13 @@ You can then run `helm search repo elastic` to see the charts.
 | Chart | Description |
 |-------|-------------|
 | [filebeat](./charts/filebeat) | Log10x enhanced Filebeat |
-| [logstash](./charts/logstash) | Log10x enhanced Logstash |
+| [logstash](./charts/logstash) | Log10x enhanced Logstash **(deprecated)** |
+
+> [!NOTE]
+> The **logstash** chart is deprecated (`deprecated: true`). Logstash now runs 10x as a
+> `log10x/edge-10x` sidecar container on the upstream `elastic/logstash` chart, not via this
+> fork. It stays installable for legacy use; see the
+> [Receiver deployment guide](https://doc.log10x.com/apps/receiver/deploy/).
 
 ### Installation Examples
 
@@ -32,7 +38,7 @@ You can then run `helm search repo elastic` to see the charts.
 # Install Filebeat with Log10x
 helm install my-filebeat log10x-elastic/filebeat -f values.yaml
 
-# Install Logstash with Log10x
+# Install Logstash with Log10x (DEPRECATED - prefer the edge-10x sidecar on the upstream elastic/logstash chart)
 helm install my-logstash log10x-elastic/logstash -f values.yaml
 ```
 

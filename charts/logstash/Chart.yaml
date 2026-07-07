@@ -9,6 +9,9 @@ keywords:
   - logstash
 version: 1.0.20
 appVersion: 8.5.1
+# Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
+# elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
+deprecated: true
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
 sources:
