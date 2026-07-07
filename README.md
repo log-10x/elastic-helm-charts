@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This repository contains the [Helm](https://helm.sh/) chart for Filebeat with integrated [Log10x](https://www.log10x.com/?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=hero) support. Filebeat runs the 10x Engine embedded in a single swapped image (`log10x/filebeat-10x`) — the one genuinely embedded forwarder.
+This repository contains [Helm](https://helm.sh/) charts for Elastic Stack components with integrated [Log10x](https://www.log10x.com/?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=hero) sidecar support.
 
 **Forked from:** [elastic/helm-charts](https://github.com/elastic/helm-charts)
 
@@ -24,12 +24,23 @@ You can then run `helm search repo elastic` to see the charts.
 | Chart | Description |
 |-------|-------------|
 | [filebeat](./charts/filebeat) | Log10x enhanced Filebeat |
+| [logstash](./charts/logstash) | Log10x enhanced Logstash **(deprecated)** |
+
+> [!NOTE]
+> The **logstash** chart is deprecated (`deprecated: true`). Logstash now runs 10x as a
+> `log10x/edge-10x` sidecar container on the upstream `elastic/logstash` chart, not via this
+> fork. It stays installable for legacy use; see the
+> [Receiver deployment guide](https://doc.log10x.com/apps/receiver/deploy/). **Filebeat** is
+> unaffected — it is the one genuinely embedded forwarder.
 
 ### Installation Examples
 
 ```bash
 # Install Filebeat with Log10x
 helm install my-filebeat log10x-elastic/filebeat -f values.yaml
+
+# Install Logstash with Log10x (DEPRECATED - prefer the edge-10x sidecar on the upstream elastic/logstash chart)
+helm install my-logstash log10x-elastic/logstash -f values.yaml
 ```
 
 ## Log10x Integration

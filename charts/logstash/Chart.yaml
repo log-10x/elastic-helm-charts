@@ -1,0 +1,29 @@
+apiVersion: v2
+name: logstash
+description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+keywords:
+  - 10x
+  - log10x
+  - logging
+  - elastic
+  - logstash
+version: 1.0.20
+appVersion: 8.5.1
+# Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
+# elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
+deprecated: true
+icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+home: https://github.com/log-10x/elastic-helm-charts
+sources:
+  - https://github.com/log-10x/elastic-helm-charts
+  - https://github.com/log-10x/docker-images
+  - https://github.com/elastic/logstash
+maintainers:
+  - name: Log10x
+    email: engineering@log10x.com
+annotations:
+  artifacthub.io/changes: |
+    - kind: changed
+      description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+    - kind: changed
+      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
