@@ -30,8 +30,7 @@ You can then run `helm search repo elastic` to see the charts.
 > The **logstash** chart is deprecated (`deprecated: true`). Logstash now runs 10x as a
 > `log10x/edge-10x` sidecar container on the upstream `elastic/logstash` chart, not via this
 > fork. It stays installable for legacy use; see the
-> [Receiver deployment guide](https://doc.log10x.com/apps/receiver/deploy/). **Filebeat** is
-> unaffected — it is the one genuinely embedded forwarder.
+> [Receiver deployment guide](https://doc.log10x.com/apps/receiver/deploy/).
 
 ### Installation Examples
 
