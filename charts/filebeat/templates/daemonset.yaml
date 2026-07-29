@@ -250,9 +250,9 @@ spec:
         {{- end }}
         - name: TENX_RUN_ARGS
         {{- if eq $.Values.tenx.kind "report" }}
-          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver receiverReadOnly true"
+          value: "@run/input/forwarder/filebeat @apps/receiver receiverReadOnly true"
         {{- else }}
-          value: "@run/input/forwarder/filebeat/receive/config.yaml @apps/receiver"
+          value: "@run/input/forwarder/filebeat @apps/receiver"
         {{- end }}
         {{- if eq $.Values.tenx.kind "optimize" }}
         - name: receiverOptimize

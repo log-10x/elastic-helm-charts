@@ -296,7 +296,7 @@ spec:
         imagePullPolicy: {{ .Values.tenx.image.pullPolicy }}
         args:
           - "run"
-          - "@run/input/forwarder/logstash/receive"
+          - "@run/input/forwarder/logstash"
           - "@apps/receiver"
           {{- if eq .Values.tenx.kind "report" }}
           - "receiverReadOnly"

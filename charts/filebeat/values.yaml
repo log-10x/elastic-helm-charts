@@ -113,7 +113,7 @@ tenx:
   # The template selects the entry matching tenx.kind. Report mode does not loop back.
   inputs:
     optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
-    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/receive/tenxNix.yml
+    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/conf/tenxNix.yml
 
   # Filebeat script processors that pipe collected events into the 10x Receiver.
   # The template selects the entry matching tenx.kind.

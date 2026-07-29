@@ -26,4 +26,4 @@ annotations:
     - kind: changed
       description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
     - kind: changed
-      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
+      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
