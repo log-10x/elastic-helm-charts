@@ -12,7 +12,8 @@ tenx:
   # Specifies the 10x distribution and affects which image will be used.
   # For more details, see - https://doc.log10x.com/architecture/flavors
   #
-  # jit, native
+  # Must be jit or native. Any other value, or null, fails the render rather
+  # than producing an image tag that cannot be pulled.
   variant: jit
 
   # Turns on Filebeat debug log

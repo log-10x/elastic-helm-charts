@@ -74,7 +74,7 @@ tenx:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x engine | `true` |
-| `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
+| `tenx.variant` | Runtime variant: `jit` or `native`. Any other value, or null, fails the render | `jit` |
 | `tenx.debug` | Enable debug logging | `false` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
@@ -99,7 +99,7 @@ tenx:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `image` | Filebeat Docker image | `log10x/filebeat-10x` |
-| `imageTag` | Image tag (defaults to `{appVersion}-{variant}`) | `""` |
+| `imageTag` | Image tag for both the DaemonSet and the Deployment (defaults to `{appVersion}-{variant}`) | `""` |
 | `daemonset.enabled` | Enable DaemonSet deployment | `true` |
 | `daemonset.filebeatConfig` | Filebeat configuration for DaemonSet | see values.yaml |
 | `daemonset.resources` | Resource requests and limits | see values.yaml |

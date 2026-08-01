@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.0.20
+version: 1.1.0
 appVersion: 1.0.20
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -20,6 +20,12 @@ maintainers:
     email: engineering@log10x.com
 annotations:
   artifacthub.io/changes: |
+    - kind: changed
+      description: "tenx.variant now accepts only 'jit' or 'native'. Any other value, or null, fails the render instead of producing an unpullable image tag."
+    - kind: fixed
+      description: "The Deployment resolves its image tag from the same helper as the DaemonSet, so it can no longer render a bare trailing colon when imageTag is unset."
+    - kind: added
+      description: "values.schema.json validates tenx.variant before templates render."
     - kind: changed
       description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
     - kind: changed
