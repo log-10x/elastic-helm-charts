@@ -9,12 +9,21 @@ tenx:
   #
   enabled: true
 
-  # Specifies the 10x distribution and affects which image will be used.
+  # Image tag SUFFIX. Combined with the chart appVersion it selects the
+  # published forwarder image: log10x/filebeat-10x:<appVersion>-<variant>.
   # For more details, see - https://doc.log10x.com/engine/flavors
   #
   # Must be jit or native. Any other value, or null, fails the render rather
   # than producing an image tag that cannot be pulled.
-  variant: jit
+  #
+  # This is a published image name, not a flavor flag, which is why it still
+  # reads "native" after the compiler/runtime rename. See
+  # https://github.com/log-10x/pipeline-releases/blob/main/FLAVORS.md
+  #
+  # native  the GraalVM runtime build. The only variant still built.
+  # jit     RETIRED. It came from the jpackage 'edge' flavor, which is gone.
+  #         Existing -jit tags keep working; no new ones are published.
+  variant: native
 
   # Turns on Filebeat debug log
   #

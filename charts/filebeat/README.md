@@ -39,7 +39,7 @@ tenx:
   enabled: true
   apiKey: "YOUR-LICENSE-KEY"
   kind: "receive"  # Options: report, receive, optimize
-  variant: "jit"    # Options: jit, native
+  variant: "native"  # image tag suffix; "jit" is retired
   runtimeName: "my-filebeat-instance"
 
   # Optional: Git access token for private repositories
@@ -74,7 +74,7 @@ tenx:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x engine | `true` |
-| `tenx.variant` | Runtime variant: `jit` or `native`. Any other value, or null, fails the render | `jit` |
+| `tenx.variant` | Image tag suffix on `log10x/filebeat-10x:<appVersion>-<variant>`. Must be `jit` or `native`; any other value, or null, fails the render. `native` is the only variant still built; `jit` is retired. | `native` |
 | `tenx.debug` | Enable debug logging | `false` |
 | `tenx.apiKey` | Log10x API key (license) | `""` |
 | `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
