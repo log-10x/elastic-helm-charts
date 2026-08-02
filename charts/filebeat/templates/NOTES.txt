@@ -1,2 +1,31 @@
 1. Watch all containers come up.
   $ kubectl get pods --namespace={{ .Release.Namespace }} -l app={{ template "filebeat.fullname" . }} -w
+{{ if and .Values.tenx.enabled (ne (include "tenx.licenseConfigured" .) "true") }}
+WARNING: no 10x licence was configured.
+
+  The engine reads its licence from TENX_LICENSE_FILE or TENX_LICENSE_KEY, and
+  the receiver pipeline will not build without one: the metric surface and the
+  write-back socket that returns events to Filebeat both require it. The engine
+  prints
+
+    metricOutput(Log10xMetricRegistryFactory) requires a license.
+    Get yours at https://console.log10x.com
+
+  and exits 1. Filebeat keeps running, so the pod stays up and ships raw.
+
+  The licence baked into the public image is of type "limited" and does NOT
+  satisfy this gate.
+
+  Set one of:
+
+    --set tenx.licenseJwt=<jwt>          chart creates the Secret
+    --set tenx.licenseSecret=<name>      you manage the Secret
+
+  Ignore this only if you inject TENX_LICENSE_FILE or TENX_LICENSE_KEY yourself
+  through daemonset.extraEnvs or daemonset.envFrom.
+{{- if .Values.tenx.healthcheck.enabled }}
+
+  The health check is on, so a pod in this state fails its probes rather than
+  reporting Ready.
+{{- end }}
+{{ end }}

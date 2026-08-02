@@ -115,6 +115,23 @@ spec:
       - name: varrundockersock
         hostPath:
           path: /var/run/docker.sock
+    {{- if and .Values.tenx.enabled (eq (include "tenx.licenseConfigured" .) "true") (eq (include "tenx.licenseDelivery" .) "file") }}
+      - name: tenx-license
+        secret:
+          secretName: {{ include "tenx.licenseSecretName" . }}
+          # Read-only to every uid in the pod rather than 0400, which would hide
+          # the token from a non-root securityContext with no fsGroup set.
+          defaultMode: 0444
+          items:
+            - key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
+              path: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
+    {{- end }}
+    {{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled }}
+      - name: tenx-probes
+        configMap:
+          name: {{ template "filebeat.fullname" . }}-tenx-probes
+          defaultMode: 0555
+    {{- end }}
     {{- if $tenxGitInit }}
       - name: tenx-git
         emptyDir: {}
@@ -203,10 +220,23 @@ spec:
         - "-d"
         - "\"*\""
         {{- end }}
+        # With the 10x health check on, the probes run the shared script from the
+        # tenx-probes ConfigMap, which tests the engine as well as Filebeat. Every
+        # other field of .Values.livenessProbe / .Values.readinessProbe is carried
+        # through, so timings stay tunable in one place. With it off, or with 10x
+        # disabled, the probes are exactly what values.yaml says: Filebeat only.
         livenessProbe:
+{{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled }}
+{{ include "tenx.probe" (dict "probe" .Values.livenessProbe "mode" "liveness") | indent 10 }}
+{{- else }}
 {{ toYaml .Values.livenessProbe | indent 10 }}
+{{- end }}
         readinessProbe:
+{{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled }}
+{{ include "tenx.probe" (dict "probe" .Values.readinessProbe "mode" "readiness") | indent 10 }}
+{{- else }}
 {{ toYaml .Values.readinessProbe | indent 10 }}
+{{- end }}
         resources:
 {{ toYaml ( .Values.resources | default .Values.daemonset.resources )  | indent 10 }}
         env:
@@ -221,15 +251,30 @@ spec:
         - name: TENX_LOG_PATH
           value: /etc/tenx/log/
         {{- if .Values.tenx.enabled }}
-        - name: TENX_API_KEY
-        {{- if .Values.tenx.apiKey }}
+        # The engine reads exactly one credential, the licence JWT, and it reads
+        # it from TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the receiver
+        # pipeline fails to build and the engine exits 1 while Filebeat carries
+        # on, so the licence is what decides whether this DaemonSet does its job.
+        {{- if eq (include "tenx.licenseConfigured" .) "true" }}
+        {{- if eq (include "tenx.licenseDelivery" .) "file" }}
+        - name: TENX_LICENSE_FILE
+          value: {{ include "tenx.licenseFilePath" . | quote }}
+        {{- else }}
+        - name: TENX_LICENSE_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ template "filebeat.fullname" . }}-tenx-api-key
-              key: api-key
-        {{- else }}
-          value: ""
+              name: {{ include "tenx.licenseSecretName" . }}
+              key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
         {{- end }}
+        {{- end }}
+        # Read by the health checks, which skip every engine-side test when 10x
+        # is switched off so the same probe script works either way.
+        - name: TENX_ENABLED
+          value: "true"
+        - name: TENX_PROBE_STALL_SECONDS
+          value: {{ .Values.tenx.healthcheck.stallSeconds | quote }}
+        - name: TENX_PROBE_FILEBEAT_TEST
+          value: {{ .Values.tenx.healthcheck.readinessFilebeatTest | quote }}
         {{- if .Values.tenx.runtimeName }}
         - name: TENX_RUNTIME_NAME
           value: {{ .Values.tenx.runtimeName | quote }}
@@ -309,6 +354,16 @@ spec:
         - name: varrundockersock
           mountPath: /var/run/docker.sock
           readOnly: true
+      {{- if and .Values.tenx.enabled (eq (include "tenx.licenseConfigured" .) "true") (eq (include "tenx.licenseDelivery" .) "file") }}
+        - name: tenx-license
+          mountPath: /etc/tenx/license
+          readOnly: true
+      {{- end }}
+      {{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled }}
+        - name: tenx-probes
+          mountPath: /etc/tenx/probes
+          readOnly: true
+      {{- end }}
       {{- if $tenxGitInit }}
         - name: tenx-git
           mountPath: /etc/tenx/git

@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.3.0
+version: 1.4.0
 appVersion: 1.1.38
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -20,6 +20,12 @@ maintainers:
     email: engineering@log10x.com
 annotations:
   artifacthub.io/changes: |
+    - kind: added
+      description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' while Filebeat kept running."
+    - kind: added
+      description: "The liveness and readiness probes now observe the 10x engine. They test that the process exists, that it is not stopped or a zombie, that its stdin is still Filebeat's stdout, and that its cumulative CPU is advancing. Previously both probes tested only Filebeat, so a killed or frozen engine still reported 1/1 Ready. Turn off with tenx.healthcheck.enabled=false."
+    - kind: deprecated
+      description: "tenx.apiKey and tenx.license. They used to set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
     - kind: changed
       description: "tenx.variant defaults to 'native'. The 'jit' variant is retired: it was built from the jpackage 'edge' flavor, which has been removed. Existing -jit tags remain pullable and 'jit' remains an accepted value for anyone pinned to one."
     - kind: changed

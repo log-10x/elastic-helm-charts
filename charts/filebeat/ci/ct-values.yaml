@@ -2,6 +2,24 @@
 # This allows chart-testing to install the chart without requiring
 # elasticsearch secrets that don't exist in the test environment
 
+tenx:
+  # 10x is OFF for 'ct install', and that is a statement about CI, not about the
+  # chart.
+  #
+  # The engine needs a licence. Without one it fails to build the receiver
+  # pipeline and exits 1 while Filebeat keeps running. CI has no licence, so
+  # every 'ct install' to date started a container whose engine was already
+  # dead. It went green anyway, because the probes tested only Filebeat. That is
+  # the exact hole this chart version closes: with the engine-aware probes, an
+  # unlicensed pod never reports Ready, so leaving 10x on here would fail the
+  # job for a real reason.
+  #
+  # To get 10x back under 'ct install', give the workflow a licence and set
+  # tenx.enabled=true with tenx.licenseSecret pointing at a Secret created
+  # before the install, plus tenx.healthcheck.readinessFilebeatTest=http for the
+  # file output below.
+  enabled: false
+
 daemonset:
   # Remove elasticsearch credential references
   extraEnvs: []
@@ -28,7 +46,7 @@ daemonset:
         filename: filebeat-events
         rotate_every_kb: 10000
 
-# Override readiness probe since "filebeat test output" doesn't work with console output
+# Override readiness probe since "filebeat test output" doesn't work with file output
 # Use HTTP endpoint check instead (same as liveness probe)
 readinessProbe:
   exec:
