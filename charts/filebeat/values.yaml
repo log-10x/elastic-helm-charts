@@ -9,12 +9,21 @@ tenx:
   #
   enabled: true
 
-  # Specifies the 10x distribution and affects which image will be used.
+  # Image tag SUFFIX. Combined with the chart appVersion it selects the
+  # published forwarder image: log10x/filebeat-10x:<appVersion>-<variant>.
   # For more details, see - https://doc.log10x.com/engine/flavors
   #
   # Must be jit or native. Any other value, or null, fails the render rather
   # than producing an image tag that cannot be pulled.
-  variant: jit
+  #
+  # This is a published image name, not a flavor flag, which is why it still
+  # reads "native" after the compiler/runtime rename. See
+  # https://github.com/log-10x/pipeline-releases/blob/main/FLAVORS.md
+  #
+  # native  the GraalVM runtime build. The only variant still built.
+  # jit     RETIRED. It came from the jpackage 'edge' flavor, which is gone.
+  #         Existing -jit tags keep working; no new ones are published.
+  variant: native
 
   # Turns on Filebeat debug log
   #
@@ -110,16 +119,37 @@ tenx:
       enabled: false
       claimName: ""
 
-  # Read-back Unix socket configs into the 10x Receiver, one per mode that loops events back.
-  # The template selects the entry matching tenx.kind. Report mode does not loop back.
+  # Read-back Unix socket config for the 10x Receiver, one entry per mode that
+  # loops events back. The template selects the entry matching tenx.kind.
+  # Report mode does not loop back, so it has no entry.
+  #
+  # Both modes point at the SAME file, and that is deliberate rather than a
+  # copy-paste: the engine reads the socket address out of
+  # conf/tenxNix.yml itself (see the module's stream.yaml, which includes
+  # "run/modules/input/forwarder/filebeat/conf/" + tenxNix.yml|tenxWin.yml to
+  # populate rawOutputUnixSocketAddress). Pointing Filebeat at any other file
+  # would let the two ends disagree on the socket path.
+  #
+  # The old per-mode receive/ and optimize/ folders no longer exist in the
+  # image: log-10x/modules moved receive/tenxNix.yml to conf/tenxNix.yml and
+  # deleted optimize/tenxNix.yml. Verify against the image you deploy with:
+  #   docker run --rm --entrypoint sh log10x/filebeat-10x:<tag> -c \
+  #     'ls $TENX_MODULES/pipelines/run/modules/input/forwarder/filebeat/conf'
   inputs:
-    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/optimize/tenxNix.yml
-    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/receive/tenxNix.yml
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/conf/tenxNix.yml
+    receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/conf/tenxNix.yml
 
   # Filebeat script processors that pipe collected events into the 10x Receiver.
   # The template selects the entry matching tenx.kind.
+  #
+  # receive and optimize share tenx-receive.js. Optimize is not a different
+  # script: it is receive plus the receiverOptimize env var the DaemonSet sets
+  # for tenx.kind=optimize, which switches the ENGINE's output encoding. The
+  # forwarder-side job (mark the event, write it to stdout, cancel the local
+  # copy) is identical, which is why the image ships only tenx-receive.js and
+  # tenx-report.js.
   processors:
-    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-optimize.js
+    optimize: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-receive.js
     receive: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-receive.js
     report: ${TENX_MODULES}/pipelines/run/modules/input/forwarder/filebeat/script/tenx-report.js
 
