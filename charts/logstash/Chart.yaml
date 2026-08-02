@@ -7,8 +7,8 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.0.20
-appVersion: 8.5.1
+version: 1.0.21
+appVersion: 1.1.39
 # Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
 # elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
 deprecated: true
@@ -26,4 +26,4 @@ annotations:
     - kind: changed
       description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
     - kind: changed
-      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
+      description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
