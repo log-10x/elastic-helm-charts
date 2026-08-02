@@ -10,7 +10,7 @@
       "required": ["variant"],
       "properties": {
         "variant": {
-          "description": "10x distribution variant. Selects the published image. See https://doc.log10x.com/architecture/flavors",
+          "description": "10x distribution variant. Selects the published image. See https://doc.log10x.com/engine/flavors",
           "type": "string",
           "enum": ["jit", "native"]
         }

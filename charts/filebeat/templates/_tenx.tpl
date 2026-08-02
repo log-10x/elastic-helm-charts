@@ -12,16 +12,16 @@ This helper fails the render instead. values.schema.json catches the same class
 of mistake earlier, but --set-string and merged parent-chart values can reach the
 templates in shapes the schema tolerated, so both layers are kept.
 
-See https://doc.log10x.com/architecture/flavors
+See https://doc.log10x.com/engine/flavors
 */}}
 {{- define "tenx.variant" -}}
 {{- $raw := .Values.tenx.variant -}}
 {{- if kindIs "invalid" $raw -}}
-{{- fail "tenx.variant is unset or null. Set it to \"jit\" or \"native\". See https://doc.log10x.com/architecture/flavors" -}}
+{{- fail "tenx.variant is unset or null. Set it to \"jit\" or \"native\". See https://doc.log10x.com/engine/flavors" -}}
 {{- end -}}
 {{- $v := $raw | toString -}}
 {{- if not (has $v (list "jit" "native")) -}}
-{{- fail (printf "tenx.variant must be \"jit\" or \"native\", got %q. See https://doc.log10x.com/architecture/flavors" $v) -}}
+{{- fail (printf "tenx.variant must be \"jit\" or \"native\", got %q. See https://doc.log10x.com/engine/flavors" $v) -}}
 {{- end -}}
 {{- $v -}}
 {{- end -}}
