@@ -18,9 +18,6 @@ sources:
   - https://github.com/log-10x/elastic-helm-charts
   - https://github.com/log-10x/docker-images
   - https://github.com/elastic/logstash
-maintainers:
-  - name: Log10x
-    email: engineering@log10x.com
 annotations:
   artifacthub.io/changes: |
     - kind: changed
