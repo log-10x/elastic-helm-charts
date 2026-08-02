@@ -1,7 +1,7 @@
 {{- if .Values.daemonset.enabled }}
 {{- $tenxGitInit := and .Values.tenx.enabled (or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled) -}}
 {{- $tenxVolumeInit := and .Values.tenx.enabled (or .Values.tenx.config.volume.enabled .Values.tenx.symbols.volume.enabled) -}}
-{{- $defaultTag := printf "%s-%s" (.Chart.AppVersion) (.Values.tenx.variant) -}}
+{{- $imageTag := include "filebeat.imageTag" . -}}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -190,9 +190,9 @@ spec:
       containers:
       - name: "{{ .Chart.Name }}"
         {{- if .Values.tenx.debug }}
-        image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}-debug"
+        image: "{{ .Values.image }}:{{ $imageTag }}-debug"
         {{- else}}
-        image: "{{ .Values.image }}:{{ .Values.imageTag | default $defaultTag }}"
+        image: "{{ .Values.image }}:{{ $imageTag }}"
         {{- end }}
         imagePullPolicy: "{{ .Values.imagePullPolicy }}"
         args:

@@ -109,7 +109,7 @@ spec:
       {{- end }}
       containers:
       - name: "filebeat"
-        image: "{{ .Values.image }}:{{ .Values.imageTag }}"
+        image: "{{ .Values.image }}:{{ include "filebeat.imageTag" . }}"
         imagePullPolicy: "{{ .Values.imagePullPolicy }}"
         args:
           - "-e"
