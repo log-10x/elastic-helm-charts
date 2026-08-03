@@ -13,6 +13,44 @@
           "description": "10x distribution variant. Selects the published image. See https://doc.log10x.com/engine/flavors",
           "type": "string",
           "enum": ["jit", "native"]
+        },
+        "licenseJwt": {
+          "description": "10x licence JWT. The engine does not start without a licence. Download from https://console.log10x.com",
+          "type": "string"
+        },
+        "licenseSecret": {
+          "description": "Name of an existing Secret holding the licence JWT. Takes precedence over licenseJwt.",
+          "type": "string"
+        },
+        "licenseSecretKey": {
+          "description": "Key inside the licence Secret.",
+          "type": "string",
+          "minLength": 1
+        },
+        "licenseDelivery": {
+          "description": "How the licence reaches the engine: projected file (TENX_LICENSE_FILE) or environment variable (TENX_LICENSE_KEY).",
+          "type": "string",
+          "enum": ["file", "env"]
+        },
+        "healthcheck": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": {
+              "description": "Make the liveness and readiness probes observe the 10x engine, not just Filebeat.",
+              "type": "boolean"
+            },
+            "stallSeconds": {
+              "description": "How long the engine may burn no CPU before the probes call it frozen.",
+              "type": "integer",
+              "minimum": 5
+            },
+            "readinessFilebeatTest": {
+              "description": "Which Filebeat test the readiness probe runs. 'output' cannot test output.file; use 'http' there.",
+              "type": "string",
+              "enum": ["output", "http", "none"]
+            }
+          }
         }
       }
     }

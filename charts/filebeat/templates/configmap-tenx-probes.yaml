@@ -1,0 +1,14 @@
+{{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "filebeat.fullname" . }}-tenx-probes
+  labels:
+    app: "{{ template "filebeat.fullname" . }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:
+  tenx-health.sh: |
+{{ .Files.Get "files/tenx-health.sh" | indent 4 }}
+{{- end }}

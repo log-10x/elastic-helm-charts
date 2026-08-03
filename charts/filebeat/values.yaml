@@ -29,11 +29,139 @@ tenx:
   #
   debug: false
 
-  # Specify your 10x API key (get one at https://doc.log10x.com/run/bootstrap/#apikey)
-  apiKey: ""
+  # ===========================================================================
+  # LICENCE. REQUIRED. Without one the 10x Receiver does not start at all.
+  # ===========================================================================
+  #
+  # The licence is not an "encode only" or "premium feature" gate. It is checked
+  # while the pipeline is being built, before any event is read, and two units
+  # of the default receiver pipeline demand it:
+  #
+  #   metricOutput(Log10xMetricRegistryFactory)   the metric surface
+  #   logOutput(run/modules/output/event/unix)    the WRITE-BACK path, i.e. the
+  #                                               socket that returns events to
+  #                                               Filebeat
+  #
+  # So an unlicensed engine cannot even hand events back. With no licence the
+  # engine prints
+  #
+  #   metricOutput(Log10xMetricRegistryFactory) requires a license.
+  #   Get yours at https://console.log10x.com
+  #
+  # and exits 1, WHILE FILEBEAT KEEPS RUNNING. The container stays up and, until
+  # the health checks below were fixed, kubectl reported the pod 1/1 Ready with
+  # the engine dead and the node shipping raw.
+  #
+  # The image ships a fallback TENX_LICENSE_KEY of type "limited" (tenant
+  # "public-image-limited"). It does NOT satisfy this gate: a container started
+  # with nothing but the baked-in key exits 1 on the message above. Treat the
+  # licence as mandatory input to every install.
+  #
+  # Supply it in ONE of three ways:
+  #
+  #   1. licenseJwt      the token itself. The chart puts it in a Secret.
+  #   2. licenseSecret   the name of a Secret you already manage.
+  #   3. neither         only valid if you inject TENX_LICENSE_KEY or
+  #                      TENX_LICENSE_FILE yourself through extraEnvs/envFrom.
+  #                      The chart cannot see that, so it does not fail the
+  #                      render, and you own the outcome.
+  #
+  # The signed JWT, downloaded from https://console.log10x.com
+  # Leave empty and set licenseSecret if the token is managed elsewhere.
+  #
+  licenseJwt: ""
 
-  # Deprecated: use apiKey instead. Kept for backwards compatibility.
+  # Name of an existing Secret holding the token. Takes precedence over
+  # licenseJwt, so a GitOps repo never has to carry the token.
+  #
+  licenseSecret: ""
+
+  # Key inside the Secret, whether chart-created or existing.
+  #
+  licenseSecretKey: "license-jwt"
+
+  # How the token reaches the engine.
+  #
+  #   file  the Secret is projected to /etc/tenx/license/<licenseSecretKey> and
+  #         TENX_LICENSE_FILE points at it. Preferred, and the engine's own
+  #         bootstrap config says so: the token never enters the process
+  #         environment, and rotating the Secret rotates the file in place.
+  #   env   the Secret is injected as TENX_LICENSE_KEY via secretKeyRef. Use
+  #         only where projecting a volume is not an option.
+  #
+  # Both are read by pipelines/run/bootstrap/config.yaml, which resolves
+  # licenseFile ahead of licenseKey when both are set.
+  #
+  licenseDelivery: "file"
+
+  # Deprecated, and no longer wired to anything. They used to set TENX_API_KEY,
+  # an environment variable NOTHING reads: it appears nowhere in the image's
+  # config tree and nowhere in the engine binary (grep -c -a TENX_API_KEY on
+  # tenx-edge-1.1.38-amd64-native returns 0, against 2 for TENX_LICENSE_KEY).
+  # They were the licence under the wrong name, which is why they never worked.
+  #
+  # They are NOT a second credential. The product's "API key" is a console/MCP
+  # credential for the SaaS side; the forwarder never presents one. The engine
+  # accepts exactly one secret, the licence JWT.
+  #
+  # If either is set while licenseJwt and licenseSecret are both empty, the
+  # chart treats the value as the licence JWT, so an existing install starts
+  # working instead of continuing to fail. Migrate to licenseJwt.
+  #
+  apiKey: ""
   license: ""
+
+  # ===========================================================================
+  # HEALTH CHECK
+  # ===========================================================================
+  #
+  # The container runs two processes joined by one pipe:
+  #
+  #   exec filebeat "$@" 2>&1 | tenx-edge run ...
+  #
+  # Both probes used to test only the left half, so a container whose engine had
+  # died still answered 127.0.0.1:5066 and still passed 'filebeat test output'.
+  # Measured on 1.1.38 three seconds after 'kill -9' on the engine: container
+  # running, both probes exit 0, kubectl 1/1 Ready, zero restarts, node shipping
+  # nothing through 10x. A SIGSTOPped engine is worse, because nothing ever
+  # breaks the pipe: measured over 30 seconds, both old probes kept exiting 0
+  # while the engine sat in state 'T'.
+  #
+  # With this enabled, livenessProbe and readinessProbe run a script that keeps
+  # the Filebeat test and adds four engine tests: the process is present, it is
+  # not stopped or a zombie, its stdin is still Filebeat's stdout, and its
+  # cumulative CPU has advanced recently.
+  #
+  # The CPU test is the one that costs nothing on an idle node. An idle node is
+  # a healthy node, so nothing here keys off event flow: the engine accrues CPU
+  # on its own timers whatever the traffic. Measured idle on 1.1.38, cumulative
+  # CPU advanced 33 ticks in 151 seconds and the longest stretch with no advance
+  # was 20 seconds.
+  #
+  healthcheck:
+    # Turn off to fall back to the Filebeat-only probes in livenessProbe and
+    # readinessProbe below. That leaves a dead engine invisible to Kubernetes.
+    #
+    enabled: true
+
+    # How long the engine may burn no CPU before the probes call it frozen.
+    # Three times the worst idle gap measured above. Raise it on heavily
+    # oversubscribed nodes, where a starved engine can legitimately go quiet
+    # for longer.
+    #
+    stallSeconds: 60
+
+    # Which Filebeat test the readiness probe runs before it looks at the
+    # engine. One of:
+    #
+    #   output  'filebeat test output'. Correct for elasticsearch, logstash and
+    #           kafka. It cannot test output.file, which answers "file output
+    #           doesn't support testing" and exits 1.
+    #   http    curl against Filebeat's stats endpoint, the same test liveness
+    #           runs. Use with output.file.
+    #   none    skip the Filebeat half; check the engine only.
+    #
+    readinessFilebeatTest: "output"
 
   # 10x Receiver mode. One of:
   #   - "receive"  : filter mode, drops events per local/centralized policy
@@ -400,6 +528,17 @@ imageTag: ""
 # # Only applicable for Deployment or StatefulSet
 # replicaCount: 1
 
+# Probe timings. With tenx.healthcheck.enabled the exec command below is
+# replaced by /etc/tenx/probes/tenx-health.sh, which runs this same Filebeat test
+# and then checks the engine. Every other field here is carried through
+# untouched, so this is still the one place to tune the timings.
+#
+# failureThreshold 3 at periodSeconds 10 means a frozen engine is restarted about
+# 30 seconds after the probe first fails. A killed or SIGSTOPped engine fails the
+# very first probe, so 30 seconds is the whole detection time. A deadlocked
+# engine that stays schedulable is caught by the CPU rule instead, at
+# tenx.healthcheck.stallSeconds plus that same 30 seconds.
+#
 livenessProbe:
   exec:
     command:
