@@ -1,3 +1,6 @@
+{{- if .Values.tenx.enabled }}{{- include "tenx.validatePorts" . }}{{- end }}
+{{- $pipelineFiles := include "logstash.pipelineFiles" . | fromYaml -}}
+{{- $configFiles := include "logstash.configFiles" . | fromYaml -}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -48,15 +51,19 @@ spec:
         {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- /* This forces a restart if the configmap has changed */}}
-        {{- if .Values.logstashConfig }}
+        {{- if $configFiles }}
         configchecksum: {{ include (print .Template.BasePath "/configmap-config.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{- /* This forces a restart if the configmap has changed */}}
-        {{- if .Values.logstashPipeline }}
+        {{- if $pipelineFiles }}
         pipelinechecksum: {{ include (print .Template.BasePath "/configmap-pipeline.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{- if .Values.logstashPattern }}
         patternchecksum: {{ include (print .Template.BasePath "/configmap-pattern.yaml") . | sha256sum | trunc 63 }}
+        {{- end }}
+        {{- /* A port change has to roll the pod, or the two halves disagree */}}
+        {{- if eq (include "tenx.socketConfigManaged" .) "true" }}
+        tenxconfigchecksum: {{ include (print .Template.BasePath "/configmap-tenx.yaml") . | sha256sum | trunc 63 }}
         {{- end }}
         {{- if .Values.secrets }}
         secretschecksum: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum | trunc 63 }}
@@ -122,12 +129,12 @@ spec:
           secret:
             secretName: {{ .secretName }}
         {{- end }}
-        {{- if .Values.logstashConfig }}
+        {{- if $configFiles }}
         - name: logstashconfig
           configMap:
             name: {{ template "logstash.fullname" . }}-config
         {{- end }}
-        {{- if .Values.logstashPipeline }}
+        {{- if $pipelineFiles }}
         - name: logstashpipeline
           configMap:
             name: {{ template "logstash.fullname" . }}-pipeline
@@ -147,6 +154,22 @@ spec:
         {{- if .Values.tenx.enabled }}
         - name: tenx-sockets
           emptyDir: {}
+        {{- if eq (include "tenx.socketConfigManaged" .) "true" }}
+        - name: tenx-config
+          configMap:
+            name: {{ template "logstash.fullname" . }}-tenx-config
+        {{- end }}
+        {{- if and (eq (include "tenx.licenseConfigured" .) "true") (eq (include "tenx.licenseDelivery" .) "file") }}
+        - name: tenx-license
+          secret:
+            secretName: {{ include "tenx.licenseSecretName" . }}
+            # Read-only to every uid in the pod rather than 0400, which would
+            # hide the token from a non-root securityContext with no fsGroup.
+            defaultMode: 0444
+            items:
+              - key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
+                path: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
+        {{- end }}
         {{- if or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled }}
         - name: tenx-git
           emptyDir: {}
@@ -254,12 +277,12 @@ spec:
             subPath: {{ .subPath }}
             {{- end }}
           {{- end }}
-          {{- range $path, $config := .Values.logstashConfig }}
+          {{- range $path, $config := $configFiles }}
           - name: logstashconfig
             mountPath: /usr/share/logstash/config/{{ $path }}
             subPath: {{ $path }}
           {{- end -}}
-          {{- range $path, $config := .Values.logstashPipeline }}
+          {{- range $path, $config := $pipelineFiles }}
           - name: logstashpipeline
             mountPath: /usr/share/logstash/pipeline/{{ $path }}
             subPath: {{ $path }}
@@ -292,29 +315,91 @@ spec:
       {{- end }}
       {{- if .Values.tenx.enabled }}
       - name: tenx
-        image: "{{ .Values.tenx.image.repository }}:{{ .Values.tenx.image.tag | default .Chart.Version }}"
+        image: "{{ .Values.tenx.image.repository }}:{{ include "tenx.imageTag" . }}"
         imagePullPolicy: {{ .Values.tenx.image.pullPolicy }}
+        {{- if .Values.tenx.waitForLogstash.enabled }}
+        # The engine opens its write-back socket to tenx.outputPort while the
+        # pipeline is being built, and Kubernetes starts both containers at
+        # once. Logstash needs the better part of a minute to boot and bind, so
+        # without this wait the sidecar reaches an unbound port and, on 1.1.39
+        # and earlier, exits 1 into CrashLoopBackOff.
+        #
+        # /bin/sh in the image is bash, so /dev/tcp does the probing and nothing
+        # extra has to be installed. The last line reproduces the image's own
+        # entrypoint, "exec $TENX_BIN \"${@}\"", so args below stay unchanged.
+        # On timeout the engine is launched anyway: newer engines wait for the
+        # peer themselves, and an engine that still cannot start says so louder
+        # than this script can.
+        command:
+          - /bin/sh
+          - -c
+          - |
+            host="{{ .Values.tenx.outputHost }}"
+            port="{{ .Values.tenx.outputPort }}"
+            deadline=$(( $(date +%s) + {{ .Values.tenx.waitForLogstash.timeoutSeconds }} ))
+            until (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null; do
+              if [ "$(date +%s)" -ge "$deadline" ]; then
+                echo "10x: gave up after {{ .Values.tenx.waitForLogstash.timeoutSeconds }}s waiting for the Logstash tcp input on $host:$port, starting anyway" >&2
+                break
+              fi
+              echo "10x: waiting for the Logstash tcp input on $host:$port"
+              sleep 2
+            done
+            exec "$TENX_BIN" "${@}"
+          - --
+        {{- end }}
+        # The socket settings are NOT here. Three ways of passing them were
+        # driven to failure on 1.1.39 before the ConfigMap above:
+        #
+        #   1. Environment. With logstashInputPort=5046 exported the engine
+        #      still resolved the 5044 default and died on "BindException:
+        #      Address already in use", the launch dump reading 'error creating
+        #      input stream for: {path=, port=5044}'. TenXEnv reads launch
+        #      arguments; only TENX_-prefixed variables travel by environment.
+        #   2. A bare argument. The @run/input/forwarder/logstash macro already
+        #      expands the image's config.yaml into 'logstashInputPort 5044', so
+        #      a second copy is "option 'logstashInputPort' (string) should be
+        #      specified only once", exit 2.
+        #   3. The documented overrideKey/overrideValue pair. Same exception,
+        #      with one pair or three.
+        #
+        # What works is replacing the config file the macro reads, which is what
+        # the tenx-config ConfigMap does. receiverOptimize and receiverReadOnly
+        # appear in no config the macros load, so those stay arguments.
         args:
           - "run"
           - "@run/input/forwarder/logstash"
           - "@apps/receiver"
+          {{- if eq .Values.tenx.kind "optimize" }}
+          - "receiverOptimize"
+          - "true"
+          {{- end }}
           {{- if eq .Values.tenx.kind "report" }}
           - "receiverReadOnly"
           - "true"
           {{- end }}
+        ports:
+          - name: tenx-in
+            containerPort: {{ .Values.tenx.inputPort }}
+            protocol: TCP
         env:
-          - name: TENX_API_KEY
-          {{- if .Values.tenx.apiKey }}
+          # The engine reads exactly one credential, the licence JWT, from
+          # TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the Receiver
+          # pipeline fails to build and the sidecar exits 1 on
+          # "readStream(stream:logstash) requires a license" while Logstash
+          # carries on shipping raw. The chart used to set only TENX_API_KEY,
+          # which nothing reads.
+          {{- if eq (include "tenx.licenseConfigured" .) "true" }}
+          {{- if eq (include "tenx.licenseDelivery" .) "file" }}
+          - name: TENX_LICENSE_FILE
+            value: {{ include "tenx.licenseFilePath" . | quote }}
+          {{- else }}
+          - name: TENX_LICENSE_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ template "logstash.fullname" . }}-tenx-api-key
-                key: api-key
-          {{- else }}
-            value: ""
+                name: {{ include "tenx.licenseSecretName" . }}
+                key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
           {{- end }}
-          {{- if eq .Values.tenx.kind "optimize" }}
-          - name: receiverOptimize
-            value: "true"
           {{- end }}
           {{- if .Values.tenx.runtimeName }}
           - name: TENX_RUNTIME_NAME
@@ -339,6 +424,20 @@ spec:
         volumeMounts:
           - name: tenx-sockets
             mountPath: /tmp
+          {{- if eq (include "tenx.socketConfigManaged" .) "true" }}
+          # Replaces the file the @run/input/forwarder/logstash macro reads.
+          # This, and not any argument or environment variable, is what sets
+          # the ports the engine binds and connects to.
+          - name: tenx-config
+            mountPath: /etc/tenx/config/pipelines/run/input/forwarder/logstash/config.yaml
+            subPath: config.yaml
+            readOnly: true
+          {{- end }}
+          {{- if and (eq (include "tenx.licenseConfigured" .) "true") (eq (include "tenx.licenseDelivery" .) "file") }}
+          - name: tenx-license
+            mountPath: /etc/tenx/license
+            readOnly: true
+          {{- end }}
           {{- if or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled }}
           - name: tenx-git
             mountPath: /etc/tenx/git

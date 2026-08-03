@@ -1,0 +1,71 @@
+---
+# Logstash + 10x Receiver, filter mode.
+#
+#   helm install my-logstash log10x-elastic/logstash \
+#     -f samples/logstash-receive.yaml \
+#     --set-file tenx.licenseJwt=./license.jwt
+#
+# What this produces:
+#
+#   Filebeat ──beats:5044──► Logstash `tenx-ingest`
+#                                    │ tcp/json_lines
+#                                    ▼
+#                             10x sidecar :5046
+#                                    │  Receiver
+#                                    ▼
+#   destinations ◄── Logstash `tenx-destinations` ◄──tcp:5045──┘
+#
+# Both containers share one network namespace, which is why the sidecar
+# listens on 5046: the logstash image already holds 5044.
+
+tenx:
+  enabled: true
+
+  # REQUIRED. Without it the sidecar exits 1 on
+  # "readStream(stream:logstash) requires a license" and Logstash carries on
+  # shipping raw. Pass it with --set-file, or point licenseSecret at a Secret
+  # you already manage and leave this empty.
+  licenseJwt: ""
+
+  # receive   filter mode, drops events per policy
+  # optimize  filter plus lossless compaction
+  # report    read-only, metrics only, event stream untouched
+  kind: "receive"
+
+  runtimeName: "logstash-k8s"
+
+  pipeline:
+    # Your sources.
+    ingestInput: |
+      beats {
+        id => "in_beats"
+        port => 5044
+      }
+
+    # Enrichment, on the way in only. `tag` is what the engine groups events
+    # by; derive it from the source in production rather than pinning a
+    # constant.
+    ingestFilter: |
+      mutate {
+        id => "ingest_enrich"
+        add_field => { "cluster" => "${CLUSTER_NAME:unset}" }
+        add_field => { "tag" => "logstash" }
+      }
+
+    # Where events go after the round trip. Replace stdout with the real
+    # destination. The `tag` field survives, so routing on it is unchanged.
+    destinationOutput: |
+      stdout {
+        id => "out_stdout"
+        codec => json_lines
+      }
+
+# Expose the beats port so forwarders outside the pod can reach it.
+service:
+  annotations: {}
+  type: ClusterIP
+  ports:
+    - name: beats
+      port: 5044
+      protocol: TCP
+      targetPort: 5044

@@ -6,6 +6,9 @@ replicas: 1
 #
 # Note that when overriding logstash.yml, `http.host: 0.0.0.0` should always be included
 # to make default probes work.
+#
+# With tenx.enabled and tenx.pipeline.managed both on, the chart adds a
+# `pipelines.yml` here unless you supply one. A key you set always wins.
 logstashConfig: {}
 #  logstash.yml: |
 #    key:
@@ -15,6 +18,11 @@ logstashConfig: {}
 
 # Allows you to add any pipeline files in /usr/share/logstash/pipeline/
 ### ***warn*** there is a hardcoded logstash.conf in the image, override it first
+#
+# With tenx.enabled and tenx.pipeline.managed both on, the chart adds
+# `tenx-ingest.conf` and `tenx-destinations.conf` here unless you supply keys of
+# those names, and points pipelines.yml at them. The image's own logstash.conf
+# stops being referenced at that point, which is also what frees port 5044.
 logstashPipeline: {}
 #  logstash.conf: |
 #    input {
@@ -305,12 +313,183 @@ tenx:
   # Log10x container image settings
   image:
     repository: "log10x/pipeline-10x"
-    # Defaults to the chart version when empty
+    # Defaults to the chart APP version, i.e. the engine release this chart is
+    # built against, when empty. It used to default to the chart version, which
+    # moves on its own cadence: a chart advertising appVersion 1.1.39 deployed
+    # log10x/pipeline-10x:1.0.21 and nothing in the render said so.
     tag: ""
     pullPolicy: "IfNotPresent"
 
-  # Log10x API key (license)
+  # ===========================================================================
+  # SOCKETS. Logstash and the sidecar share one network namespace.
+  # ===========================================================================
+  #
+  # Two TCP sockets carry the round trip:
+  #
+  #   Logstash ingest ──tcp──► sidecar :inputPort ──► Receiver
+  #                                                      │
+  #   Logstash destinations ◄──tcp── sidecar ◄───────────┘
+  #                   :outputPort
+  #
+  # inputPort is 5046, not the engine module's own 5044 default. The stock
+  # logstash image ships pipeline/logstash.conf with a `beats` input on 5044,
+  # and a `beats` input is the most common thing a user adds by hand. Sharing a
+  # namespace, whichever binds second dies: measured on 1.1.39 the sidecar lost,
+  # with "Address already in use" and exit 1.
+  #
+  # Both ports must differ from each other. The render fails if they do not.
+  #
+  # These are written into a ConfigMap that REPLACES the copy of
+  # run/input/forwarder/logstash/config.yaml shipped in the image. That file,
+  # not any argument or environment variable, is what the engine reads: the
+  # launch macro expands it into CLI options itself, so passing the same option
+  # again is "option 'logstashInputPort' (string) should be specified only
+  # once" and exit 2, including via overrideKey/overrideValue.
+  #
+  # With tenx.config.git.enabled or tenx.config.volume.enabled the whole 10x
+  # config tree comes from you, so the ports come from there too and these
+  # values reach only the Logstash half of the pair. Keep the two in sync.
+  #
+  inputPort: 5046
+  outputPort: 5045
+  outputHost: "127.0.0.1"
+
+  # Name of the field in each Logstash event holding the log line. `message` is
+  # what the `beats`, `file`, `tcp` and `http` inputs produce. Set it to e.g.
+  # `log` for sources that do not.
+  #
+  inputMessageField: "message"
+
+  # On-wire format for the record written back to Logstash.
+  #
+  #   delimited  each top-level field of the record is emitted as its own
+  #              field, preserving the original structure. Pairs with the
+  #              `codec => json_lines` on the return input.
+  #   json       the whole record is wrapped as one stringified field.
+  #
+  outputEncodeType: "delimited"
+
+  # ===========================================================================
+  # STARTUP ORDER
+  # ===========================================================================
+  #
+  # The engine opens its write-back socket to outputPort while it is building
+  # the pipeline, and Kubernetes starts both containers at the same instant.
+  # Logstash takes most of a minute to boot and bind, so the sidecar reaches an
+  # unbound port. On 1.1.39 and earlier that is exit 1 and CrashLoopBackOff.
+  #
+  # With this on, the sidecar polls the port first, then execs the engine. On
+  # timeout it launches the engine regardless rather than pretending to be
+  # healthy.
+  #
+  waitForLogstash:
+    enabled: true
+    timeoutSeconds: 300
+
+  # ===========================================================================
+  # PIPELINES
+  # ===========================================================================
+  #
+  # The 10x round trip needs two Logstash pipelines: one that ships events to
+  # the sidecar, and one that binds outputPort and receives them back. Nothing
+  # about it is optional, and the chart used to ship neither, so an install with
+  # tenx.enabled and no hand-written pipeline could not work.
+  #
+  # With `managed` on the chart renders both, plus the pipelines.yml that points
+  # at them. Substitute your own sources and destinations below, or set
+  # `managed: false` and put complete files in logstashPipeline/logstashConfig.
+  #
+  pipeline:
+    managed: true
+
+    # The `input { }` body of the ingest pipeline. Replace with your real
+    # sources. `beats` on 5044 matches what the stock image listens on, so
+    # anything already shipping to this chart keeps working.
+    ingestInput: |
+      beats {
+        id => "in_beats"
+        port => 5044
+      }
+
+    # The `filter { }` body of the ingest pipeline. Runs once per event, on the
+    # way in. The `tag` field is how the engine groups events by source: the
+    # module reads it out of the JSON with `\"tag\":\"(.*?)\"`. Any value works.
+    # Leave empty to render no filter block at all.
+    ingestFilter: |
+      mutate {
+        id => "ingest_enrich"
+        add_field => { "tag" => "logstash" }
+      }
+
+    # The `output { }` body of the destinations pipeline: where events go after
+    # the round trip. Replace `stdout` with elasticsearch, opensearch,
+    # splunk_hec, kafka, s3 and so on. The `tag` field survives the trip, so
+    # destinations that route on it see the value they would without 10x.
+    destinationOutput: |
+      stdout {
+        id => "out_stdout"
+        codec => json_lines
+      }
+
+  # ===========================================================================
+  # LICENCE. REQUIRED. Without one the 10x Receiver does not start at all.
+  # ===========================================================================
+  #
+  # The licence is checked while the pipeline is being built, before any event
+  # is read, and the Logstash read stream is one of the units that demands it.
+  # With no licence the sidecar prints
+  #
+  #   readStream(stream:logstash) requires a license.
+  #   Get yours at https://console.log10x.com
+  #
+  # and exits 1, WHILE LOGSTASH KEEPS RUNNING and keeps shipping raw.
+  #
+  # The image ships a fallback TENX_LICENSE_KEY of type "limited" (tenant
+  # "public-image-limited"). It does not satisfy this gate. Treat the licence as
+  # mandatory input to every install.
+  #
+  # Supply it in one of three ways:
+  #
+  #   1. licenseJwt      the token itself. The chart puts it in a Secret.
+  #   2. licenseSecret   the name of a Secret you already manage.
+  #   3. neither         only valid if you inject TENX_LICENSE_KEY or
+  #                      TENX_LICENSE_FILE yourself through extraEnvs/envFrom.
+  #                      The chart cannot see that, so it does not fail the
+  #                      render, and you own the outcome.
+  #
+  # The signed JWT, downloaded from https://console.log10x.com
+  #
+  licenseJwt: ""
+
+  # Name of an existing Secret holding the token. Takes precedence over
+  # licenseJwt, so a GitOps repo never has to carry the token.
+  #
+  licenseSecret: ""
+
+  # Key inside the Secret, whether chart-created or existing.
+  #
+  licenseSecretKey: "license-jwt"
+
+  # How the token reaches the engine.
+  #
+  #   file  the Secret is projected to /etc/tenx/license/<licenseSecretKey> and
+  #         TENX_LICENSE_FILE points at it. Preferred: the token never enters
+  #         the process environment, and rotating the Secret rotates the file.
+  #   env   the Secret is injected as TENX_LICENSE_KEY via secretKeyRef.
+  #
+  licenseDelivery: "file"
+
+  # Deprecated. They used to set TENX_API_KEY, an environment variable NOTHING
+  # reads: it appears neither in the image's config tree nor in the engine
+  # binary. They were the licence under the wrong name, which is why no install
+  # that set them ever started the engine.
+  #
+  # If either is set while licenseJwt and licenseSecret are both empty, the
+  # chart treats the value as the licence JWT so an existing install starts
+  # working instead of continuing to fail. Migrate to licenseJwt.
+  #
   apiKey: ""
+  license: ""
 
   # 10x Receiver mode. One of:
   #   - "receive"  : filter mode, drops events per local/centralized policy

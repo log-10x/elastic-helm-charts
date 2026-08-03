@@ -37,7 +37,10 @@ Enable the Log10x sidecar by configuring the `tenx` section in your values file:
 ```yaml
 tenx:
   enabled: true
-  apiKey: "YOUR-LICENSE-KEY"
+  # REQUIRED. Without it the sidecar exits 1 on
+  # "readStream(stream:logstash) requires a license" while Logstash keeps
+  # shipping raw. Use licenseSecret instead to keep the token out of git.
+  licenseJwt: "YOUR-LICENSE-JWT"
   kind: "receive"  # Options: report, receive, optimize
   runtimeName: "my-logstash-instance"
 
@@ -58,6 +61,45 @@ tenx:
       path: "path/to/symbols"  # Optional
 ```
 
+### How events reach the engine and come back
+
+Logstash and the sidecar share one network namespace, and the round trip uses
+two TCP sockets:
+
+```
+Logstash `tenx-ingest` pipeline ──► sidecar :5046 ──► 10x Receiver
+                                                            │
+Logstash `tenx-destinations` pipeline ◄────────────────── :5045
+```
+
+With `tenx.pipeline.managed` on (the default) the chart writes both pipelines
+and the `pipelines.yml` that points at them, so an install with a licence works
+out of the box. Put your sources in `tenx.pipeline.ingestInput`, your enrichment
+in `tenx.pipeline.ingestFilter`, and your real destinations in
+`tenx.pipeline.destinationOutput`. Filters belong on the ingest side only, so
+each event is enriched exactly once.
+
+Three things about the ports are worth knowing before you change them:
+
+- The sidecar listens on **5046**, not the engine module's own 5044 default. The
+  stock `logstash` image binds 5044 for its `beats` input, and one namespace
+  means the second bind fails with `Address already in use`.
+- The engine opens the write-back socket to 5045 as it builds its pipeline,
+  before Kubernetes has given Logstash time to bind it. `tenx.waitForLogstash`
+  polls the port first, then execs the engine.
+- The engine-side values reach it through a ConfigMap that replaces the image's
+  `run/input/forwarder/logstash/config.yaml`, because that file is the only
+  place the engine reads them from. Setting them as environment variables or as
+  extra launch arguments does not work, and the second one is fatal: the launch
+  macro expands the file into CLI options itself, so a repeat is `option
+  'logstashInputPort' (string) should be specified only once` and exit 2.
+  `tenx.config.git` or `tenx.config.volume` hands the whole config tree to you,
+  ports included, and the chart stops rendering that ConfigMap.
+
+To hand-write the whole thing instead, set `tenx.pipeline.managed: false` and
+supply `logstashPipeline` and `logstashConfig` yourself. Any key you set under
+those two always wins over the chart's.
+
 ### Log10x Modes
 
 | Mode | Description |
@@ -74,9 +116,23 @@ tenx:
 |-----------|-------------|---------|
 | `tenx.enabled` | Enable Log10x sidecar container | `false` |
 | `tenx.image.repository` | Log10x container image repository | `log10x/pipeline-10x` |
-| `tenx.image.tag` | Log10x container image tag (defaults to chart version) | `""` |
-| `tenx.variant` | Runtime variant: `jit` or `native` | `jit` |
-| `tenx.apiKey` | Log10x API key (license) | `""` |
+| `tenx.image.tag` | Log10x container image tag (defaults to the chart appVersion) | `""` |
+| `tenx.licenseJwt` | Licence JWT. The chart puts it in a Secret | `""` |
+| `tenx.licenseSecret` | Name of an existing Secret holding the token. Wins over `licenseJwt` | `""` |
+| `tenx.licenseSecretKey` | Key inside that Secret | `license-jwt` |
+| `tenx.licenseDelivery` | `file` (`TENX_LICENSE_FILE`) or `env` (`TENX_LICENSE_KEY`) | `file` |
+| `tenx.apiKey` | Deprecated. Read as the licence when nothing else is set | `""` |
+| `tenx.inputPort` | Port the sidecar listens on for events from Logstash | `5046` |
+| `tenx.outputPort` | Port of the Logstash `tcp` input the sidecar writes back to | `5045` |
+| `tenx.outputHost` | Host of that `tcp` input | `127.0.0.1` |
+| `tenx.inputMessageField` | Field in each event holding the log line | `message` |
+| `tenx.outputEncodeType` | Return wire format: `delimited` or `json` | `delimited` |
+| `tenx.waitForLogstash.enabled` | Wait for `outputPort` to bind before launching the engine | `true` |
+| `tenx.waitForLogstash.timeoutSeconds` | How long to wait before launching anyway | `300` |
+| `tenx.pipeline.managed` | Render the two Logstash pipelines and `pipelines.yml` | `true` |
+| `tenx.pipeline.ingestInput` | `input { }` body of the ingest pipeline | `beats` on 5044 |
+| `tenx.pipeline.ingestFilter` | `filter { }` body of the ingest pipeline | adds `tag` |
+| `tenx.pipeline.destinationOutput` | `output { }` body of the destinations pipeline | `stdout` |
 | `tenx.kind` | Operation mode: `report`, `receive`, or `optimize` | `receive` |
 | `tenx.runtimeName` | Optional name for this runtime instance | `""` |
 | `tenx.resources` | Resource limits for Log10x sidecar | see values.yaml |
@@ -125,7 +181,7 @@ For the complete list of configuration options, see [values.yaml](./values.yaml)
 
 - The chart deploys a StatefulSet with automated rolling updates by default
 - Ensure the JVM heap size in `logstashJavaOpts` matches your resource limits
-- When using Log10x, the sidecar container communicates with Logstash via Unix socket
+- When using Log10x, the sidecar and Logstash talk over two TCP sockets inside the shared pod network namespace, `tenx.inputPort` in and `tenx.outputPort` back
 - Configuration files can be set via ConfigMap using `logstashConfig`
 - When overriding `logstash.yml`, always include `http.host: 0.0.0.0` for probes to work
 
