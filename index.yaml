@@ -3,6 +3,52 @@ entries:
   filebeat:
   - annotations:
       artifacthub.io/changes: |
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' while Filebeat kept running."
+        - kind: added
+          description: "The liveness and readiness probes now observe the 10x engine. They test that the process exists, that it is not stopped or a zombie, that its stdin is still Filebeat's stdout, and that its cumulative CPU is advancing. Previously both probes tested only Filebeat, so a killed or frozen engine still reported 1/1 Ready. Turn off with tenx.healthcheck.enabled=false."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They used to set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.variant defaults to 'native'. The 'jit' variant is retired: it was built from the jpackage 'edge' flavor, which has been removed. Existing -jit tags remain pullable and 'jit' remains an accepted value for anyone pinned to one."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: fixed
+          description: "TENX_RUN_ARGS launches '@run/input/forwarder/filebeat', the folder form the image itself defaults to. The previous '@run/input/forwarder/filebeat/receive/config.yaml' names a path the config tree no longer has, and the engine aborted at startup with 'error expanding launch macro'."
+        - kind: fixed
+          description: "tenx.inputs points at conf/tenxNix.yml, the readback snippet the image actually ships and the same file the engine reads the socket address from. The receive/ and optimize/ folders it named were removed from log-10x/modules."
+        - kind: fixed
+          description: "tenx.processors.optimize points at tenx-receive.js. tenx-optimize.js was deleted from log-10x/modules; optimize mode is receive plus the receiverOptimize env var, not a different script."
+        - kind: changed
+          description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
+        - kind: changed
+          description: "Sample values file is filebeat-receive.yaml for the default filter mode."
+    apiVersion: v2
+    appVersion: 1.1.39
+    created: "2026-08-03T04:27:01.977351223Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: 62b0d880f767d007b4bbac5e9958d06eef40142ebd39e2c129bf4b9e308d7a99
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.4.0/filebeat-1.4.0.tgz
+    version: 1.4.0
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "tenx.variant defaults to 'native'. The 'jit' variant is retired: it was built from the jpackage 'edge' flavor, which has been removed. Existing -jit tags remain pullable and 'jit' remains an accepted value for anyone pinned to one."
         - kind: changed
@@ -479,6 +525,34 @@ entries:
         - kind: changed
           description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
         - kind: changed
+          description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
+    apiVersion: v2
+    appVersion: 1.1.39
+    created: "2026-08-03T04:27:02.111398962Z"
+    deprecated: true
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: 99173ded0fbed8e3935a90141d693b61cc6875497a66db0f07ea514c705b4377
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.0.21/logstash-1.0.21.tgz
+    version: 1.0.21
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
           description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash/receive in all modes. Report mode adds receiverReadOnly true."
     apiVersion: v2
     appVersion: 8.5.1
@@ -906,4 +980,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-02T17:22:15.089603402Z"
+generated: "2026-08-03T04:27:02.111572591Z"
