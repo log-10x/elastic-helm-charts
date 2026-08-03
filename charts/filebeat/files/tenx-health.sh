@@ -9,19 +9,26 @@
 #
 #   exec filebeat "$@" 2>&1 | tenx-edge run ...
 #
-# Every earlier version of these probes tested only the left-hand side, so a
-# container whose engine had died still answered 127.0.0.1:5066 and still passed
-# 'filebeat test output'. Measured three seconds after 'kill -9' on the engine:
-# container running, liveness 200, readiness OK, kubectl 1/1 Ready, zero
-# restarts, and the node shipping nothing through 10x. The container only fell
-# over ~29 seconds later, when Filebeat's 30s metrics write hit the broken pipe.
+# An engine that EXITS needs no probe. The entrypoint wraps that pipe in
+# 'set -euo pipefail', so the engine's exit status takes PID 1 down and the
+# container restarts in about three seconds on its own.
+#
+# An engine that FREEZES is the reason this file exists. SIGSTOP, a traced
+# process, a deadlock: the pid stays in the process table, nothing breaks the
+# pipe, the entrypoint never returns. Measured on 1.1.39 with the old
+# Filebeat-only probes, a SIGSTOPped engine held the pod 1/1 Ready for 150
+# seconds while 5.2MB backed up in the pipe. With this script the same freeze
+# fails the next probe, 22 seconds in, and the container is restarted at 29
+# seconds.
 #
 # WHAT IT CATCHES
 #
-#   B1/B2  engine gone, idle or with output configured  -> the pgrep test
-#   B3     engine frozen but still in the process table  -> the state test for a
-#          stopped process, and the CPU test for one that is scheduled but has
-#          quietly stopped doing anything
+#   engine frozen but still in the process table -> the state test for a
+#     stopped or traced process, and the CPU test for one that is scheduled but
+#     has quietly stopped doing anything
+#   engine gone -> the pgrep test. Redundant with the entrypoint in the shipped
+#     image, kept because it costs nothing and the entrypoint is not the
+#     chart's to guarantee
 #
 # The CPU test is what makes this more than a liveness theatre. An idle node is
 # a healthy node, so nothing here keys off EVENT flow: the engine accumulates

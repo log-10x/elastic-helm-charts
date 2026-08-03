@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - filebeat
-version: 1.4.0
+version: 1.5.0
 appVersion: 1.1.39
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -21,9 +21,17 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: added
-      description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' while Filebeat kept running."
+      description: "The Deployment supports 10x. It now carries the licence, the engine environment, the engine-aware probes and 10x wiring in its default filebeatConfig. Until now it carried none of them, so an install with tenx.enabled at its default of true crash-looped from the first second: the engine fell back to the image's limited key, failed the licence gate and took the container down through the entrypoint's pipefail. Verified on a cluster, 188 of 188 generated events returned through the engine carrying tenx_hash."
     - kind: added
-      description: "The liveness and readiness probes now observe the 10x engine. They test that the process exists, that it is not stopped or a zombie, that its stdin is still Filebeat's stdout, and that its cumulative CPU is advancing. Previously both probes tested only Filebeat, so a killed or frozen engine still reported 1/1 Ready. Turn off with tenx.healthcheck.enabled=false."
+      description: "Chart CI installs with the engine running. ci/ct-values.yaml sets tenx.enabled=true and the lint-test workflow feeds a licence from the TENX_LICENSE_JWT repository secret with --set-file, so 'ct install' can fail on a broken engine. Every previous run pinned tenx.enabled=false. Fork pull requests, which cannot read secrets, install with the engine off and print a warning that says so."
+    - kind: added
+      description: "ci/ct-deployment-values.yaml, so 'ct install' exercises the Deployment as well as the DaemonSet."
+    - kind: added
+      description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' and the entrypoint's pipefail took the container down with it."
+    - kind: added
+      description: "The liveness and readiness probes observe the 10x engine: the process exists, it is not stopped or a zombie, its stdin is still Filebeat's stdout, and its cumulative CPU is advancing. What this catches that nothing else does is a FROZEN engine, which is silent: SIGSTOP leaves the pid in the table, nothing breaks the pipe, and the old Filebeat-only probes held the pod 1/1 Ready for 150 seconds while 5.2MB backed up. Measured on 1.1.39, the engine-aware probe fails 22 seconds after the freeze with \"engine pid 12 is stopped (state 'T'): frozen, not running\" and the container restarts at 29 seconds. A dead engine is a different case and needs no probe: the entrypoint runs the pipeline under 'set -euo pipefail', so an engine that exits takes the container down in about three seconds on its own. Turn off with tenx.healthcheck.enabled=false."
+    - kind: changed
+      description: "The engine environment, volumes, mounts and git init container are defined once in _tenx.tpl and included by both workloads, so the DaemonSet and the Deployment cannot drift apart again."
     - kind: deprecated
       description: "tenx.apiKey and tenx.license. They used to set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
     - kind: changed
