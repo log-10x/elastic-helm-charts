@@ -576,6 +576,48 @@ entries:
   logstash:
   - annotations:
       artifacthub.io/changes: |
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart had no licence wiring at all, so every install crashed the sidecar on 'readStream(stream:logstash) requires a license' while Logstash kept shipping raw."
+        - kind: added
+          description: "The chart renders the two Logstash pipelines the round trip needs: tenx-ingest.conf hands events to the sidecar, tenx-destinations.conf binds the return port and receives them back, and pipelines.yml points at both. Sources, filters and destinations are values (tenx.pipeline.*). Set tenx.pipeline.managed=false to supply your own. Before this the chart shipped neither, so nothing bound the return port and the sidecar exited 1 with nothing to connect to."
+        - kind: added
+          description: "The sidecar waits for the Logstash tcp input to bind before launching the engine. Kubernetes starts both containers at once and Logstash needs most of a minute to boot, so the engine used to reach an unbound port and exit 1 into CrashLoopBackOff. Turn off with tenx.waitForLogstash.enabled=false."
+        - kind: fixed
+          description: "The sidecar listens on 5046 by default (tenx.inputPort), not 5044. The stock logstash image binds 5044 for its own beats input and both containers share one network namespace, so the sidecar died on 'Address already in use'. tenx.outputPort, tenx.outputHost, tenx.inputMessageField and tenx.outputEncodeType are configurable too, and a render where inputPort equals outputPort fails instead of shipping a guaranteed collision."
+        - kind: added
+          description: "A ConfigMap replaces the image's run/input/forwarder/logstash/config.yaml with the chart's socket settings. That file is the only thing the engine reads for them: the launch macro expands it into CLI options itself, so passing logstashInputPort again is 'option logstashInputPort (string) should be specified only once' and exit 2, and the documented overrideKey/overrideValue form fails the same way. Skipped when tenx.config.git or tenx.config.volume supplies the config tree."
+        - kind: fixed
+          description: "tenx.image.tag defaults to .Chart.AppVersion, the engine release the chart is built against. It defaulted to .Chart.Version, so a chart advertising appVersion 1.1.39 deployed log10x/pipeline-10x:1.0.21."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
+          description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
+    apiVersion: v2
+    appVersion: 1.1.39
+    created: "2026-08-03T22:23:39.649827728Z"
+    deprecated: true
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: fd791a0fae40a1fa4a7c66972831c9b40f37c45eb9a4f273d66a8dbdb8b31126
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.1.0/logstash-1.1.0.tgz
+    version: 1.1.0
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
         - kind: changed
@@ -1034,4 +1076,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-03T22:23:32.542648745Z"
+generated: "2026-08-03T22:23:39.649979969Z"
