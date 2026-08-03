@@ -48,9 +48,15 @@ tenx:
   #   metricOutput(Log10xMetricRegistryFactory) requires a license.
   #   Get yours at https://console.log10x.com
   #
-  # and exits 1, WHILE FILEBEAT KEEPS RUNNING. The container stays up and, until
-  # the health checks below were fixed, kubectl reported the pod 1/1 Ready with
-  # the engine dead and the node shipping raw.
+  # and exits 1. The container goes with it in about three seconds: the image's
+  # docker-entrypoint runs
+  #
+  #   set -euo pipefail
+  #   exec filebeat "$@" 2>&1 | $TENX_BIN run ...
+  #
+  # so the engine's exit status fails the pipeline and PID 1 leaves. An
+  # unlicensed pod therefore crash-loops loudly, which is the one failure mode
+  # nobody needs a probe for. It does not sit Ready with a dead engine.
   #
   # The image ships a fallback TENX_LICENSE_KEY of type "limited" (tenant
   # "public-image-limited"). It does NOT satisfy this gate: a container started
@@ -119,18 +125,30 @@ tenx:
   #
   #   exec filebeat "$@" 2>&1 | tenx-edge run ...
   #
-  # Both probes used to test only the left half, so a container whose engine had
-  # died still answered 127.0.0.1:5066 and still passed 'filebeat test output'.
-  # Measured on 1.1.38 three seconds after 'kill -9' on the engine: container
-  # running, both probes exit 0, kubectl 1/1 Ready, zero restarts, node shipping
-  # nothing through 10x. A SIGSTOPped engine is worse, because nothing ever
-  # breaks the pipe: measured over 30 seconds, both old probes kept exiting 0
-  # while the engine sat in state 'T'.
+  # WHAT THIS IS FOR, AND WHAT IT IS NOT FOR
+  #
+  # An engine that EXITS is not the case to worry about. The entrypoint wraps
+  # that pipe in 'set -euo pipefail', so the engine's exit status kills PID 1
+  # and Kubernetes restarts the container in about three seconds. That happens
+  # with or without these probes, and it is loud.
+  #
+  # An engine that FREEZES is the case, and it is silent. SIGSTOP, a traced
+  # process, a deadlock: the pid stays in the table, nothing breaks the pipe,
+  # the entrypoint never returns, and the container survives indefinitely with
+  # Filebeat writing into a stopped reader. Measured on 1.1.39 with the old
+  # Filebeat-only probes, a SIGSTOPped engine left the pod 1/1 Ready for 150
+  # seconds while 5.2MB piled up in the pipe.
   #
   # With this enabled, livenessProbe and readinessProbe run a script that keeps
   # the Filebeat test and adds four engine tests: the process is present, it is
   # not stopped or a zombie, its stdin is still Filebeat's stdout, and its
-  # cumulative CPU has advanced recently.
+  # cumulative CPU has advanced recently. Measured on 1.1.39, 'kill -STOP' on
+  # the engine failed the very next probe with
+  #
+  #   FAIL: engine pid 12 is stopped (state 'T'): frozen, not running
+  #
+  # 22 seconds after the freeze, and the container was restarted 29 seconds
+  # after it at failureThreshold 3 / periodSeconds 10.
   #
   # The CPU test is the one that costs nothing on an idle node. An idle node is
   # a healthy node, so nothing here keys off event flow: the engine accrues CPU
@@ -140,7 +158,8 @@ tenx:
   #
   healthcheck:
     # Turn off to fall back to the Filebeat-only probes in livenessProbe and
-    # readinessProbe below. That leaves a dead engine invisible to Kubernetes.
+    # readinessProbe below. A dead engine still restarts the container through
+    # the entrypoint; a frozen one becomes invisible to Kubernetes again.
     #
     enabled: true
 
@@ -453,12 +472,46 @@ deployment:
   #   mountPath: /usr/share/extras
   #   readOnly: true
   # such as filebeat.yml for deployment
+  #
+  # 10x - the same three components the DaemonSet config carries, because the
+  # Deployment runs the same image and the same in-container engine:
+  #
+  # 1. Monitor of the 10x internal log, and reporting it to elasticsearch
+  # 2. Setting up the JS processor (all apps) and 10x read-back ('receiver'/'optimizer')
+  #    for the integration between the 10x pipeline and filebeat
+  # 3. Reporting 10x template objects to elasticsearch ('optimizer' only)
+  #
+  # Before chart 1.5.0 this config had none of it, so a Deployment install with
+  # tenx.enabled left at its default of true started the engine with nothing
+  # routed to it and nothing read back from it.
+  #
   filebeatConfig:
     filebeat.yml: |
+
+      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
+      filebeat.config.inputs:
+        enabled: true
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+      {{- end }}
+
       filebeat.inputs:
+      {{- if .Values.tenx.enabled }}
+        - type: filestream
+          id: tenx_internal
+          paths:
+            - ${TENX_LOG_PATH}/*.log
+          fields:
+            log_type: tenx_internal
+      {{- end }}
         - type: log
           paths:
             - /usr/share/filebeat/logs/filebeat
+          {{- if .Values.tenx.enabled }}
+          processors:
+          - script:
+              lang: javascript
+              file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+          {{- end }}
 
       output.elasticsearch:
         host: "${NODE_NAME}"
@@ -467,6 +520,16 @@ deployment:
         password: "${ELASTICSEARCH_PASSWORD}"
         protocol: https
         ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
+        {{- if .Values.tenx.enabled }}
+        indices:
+        - index: "tenx_internal"
+          when.equals:
+            fields.log_type: "tenx_internal"
+        {{- if eq .Values.tenx.kind "optimize" }}
+        - index: "l1es_dml"
+          when.has_fields: ["template", "templateHash"]
+        {{- end }}
+        {{- end }}
   nodeSelector: {}
   # A list of secrets and their paths to mount inside the pod
   # This is useful for mounting certificates for security other sensitive values

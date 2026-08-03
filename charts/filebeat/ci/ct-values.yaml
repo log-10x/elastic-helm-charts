@@ -1,36 +1,61 @@
-# CI test values - minimal config without external dependencies
-# This allows chart-testing to install the chart without requiring
-# elasticsearch secrets that don't exist in the test environment
+# CI test values for the DaemonSet: no elasticsearch, no dependency outside the
+# test cluster, and the 10x engine ON.
+#
+# The engine needs a licence, and the workflow supplies it. lint-test.yaml
+# passes --set-file tenx.licenseJwt=<file written from the TENX_LICENSE_JWT
+# repository secret> and the chart puts the token in its own Secret. Nothing has
+# to exist in the test namespace before the install, which matters because
+# 'ct install' creates and destroys that namespace itself.
+#
+# When the secret is not available, which is every pull request from a fork, the
+# workflow prints a warning and re-runs the install with tenx.enabled=false. CI
+# then still checks that Filebeat installs, and says out loud that the engine
+# went untested.
+#
+# Until chart 1.5.0 this file pinned tenx.enabled=false unconditionally, so no
+# chart CI run had ever started the engine. A change that broke the engine could
+# not turn this job red.
 
 tenx:
-  # 10x is OFF for 'ct install', and that is a statement about CI, not about the
-  # chart.
-  #
-  # The engine needs a licence. Without one it fails to build the receiver
-  # pipeline and exits 1 while Filebeat keeps running. CI has no licence, so
-  # every 'ct install' to date started a container whose engine was already
-  # dead. It went green anyway, because the probes tested only Filebeat. That is
-  # the exact hole this chart version closes: with the engine-aware probes, an
-  # unlicensed pod never reports Ready, so leaving 10x on here would fail the
-  # job for a real reason.
-  #
-  # To get 10x back under 'ct install', give the workflow a licence and set
-  # tenx.enabled=true with tenx.licenseSecret pointing at a Secret created
-  # before the install, plus tenx.healthcheck.readinessFilebeatTest=http for the
-  # file output below.
-  enabled: false
+  enabled: true
+
+  # 'filebeat test output' answers "file output doesn't support testing" and
+  # exits 1, so the readiness probe runs the http test against Filebeat's stats
+  # endpoint instead. output.file is what this file uses, see below.
+  healthcheck:
+    readinessFilebeatTest: http
 
 daemonset:
   # Remove elasticsearch credential references
   extraEnvs: []
   # Remove elasticsearch certificate mounts
   secretMounts: []
-  # Minimal filebeat config that outputs to file (no elasticsearch)
+  # Minimal filebeat config that outputs to file (no elasticsearch), carrying
+  # the same 10x wiring the shipped default carries: the read-back input the
+  # engine returns events on, and the script processor that hands events to it.
+  # Without those two the engine would run with nothing routed through it, and a
+  # green run would prove only that a process started.
+  #
   # NOTE: output.console cannot be used when tenx is enabled - it conflicts
   # with the 10x stdout pipe. Use output.file instead.
   filebeatConfig:
     filebeat.yml: |
+
+      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
+      filebeat.config.inputs:
+        enabled: true
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+      {{- end }}
+
       filebeat.inputs:
+      {{- if .Values.tenx.enabled }}
+      - type: filestream
+        id: tenx_internal
+        paths:
+          - ${TENX_LOG_PATH}/*.log
+        fields:
+          log_type: tenx_internal
+      {{- end }}
       - type: container
         paths:
           - /var/log/containers/*.log
@@ -40,14 +65,22 @@ daemonset:
             matchers:
             - logs_path:
                 logs_path: "/var/log/containers/"
+        {{- if .Values.tenx.enabled }}
+        - script:
+            lang: javascript
+            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+        {{- end }}
 
       output.file:
         path: "/tmp/filebeat-output"
         filename: filebeat-events
         rotate_every_kb: 10000
 
-# Override readiness probe since "filebeat test output" doesn't work with file output
-# Use HTTP endpoint check instead (same as liveness probe)
+# Kept for the fork-PR fallback, where the workflow re-runs the install with
+# tenx.enabled=false. Without 10x there is no engine-aware probe to select the
+# http test, and the stock readiness probe runs 'filebeat test output', which
+# exits 1 against output.file. With 10x on, tenx.healthcheck replaces this
+# handler and keeps the timings below.
 readinessProbe:
   exec:
     command:

@@ -1,0 +1,97 @@
+# CI test values for the Deployment, the singleton workload this chart ships
+# alongside the DaemonSet for inputs that must run once per cluster.
+#
+# 'ct install' runs one install per file in this directory, so this file is what
+# makes the Deployment a tested path rather than a rendered one. Before chart
+# 1.5.0 nothing installed it: it carried no TENX_* variable, no licence, no
+# probe script and no 10x wiring in its default filebeatConfig, so an install
+# with tenx.enabled left at its default of true crash-looped from the first
+# second and no CI run said so.
+#
+# The licence arrives the same way as in ct-values.yaml, through --set-file on
+# the workflow's ct install command.
+
+tenx:
+  enabled: true
+  healthcheck:
+    readinessFilebeatTest: http
+
+daemonset:
+  enabled: false
+
+deployment:
+  enabled: true
+  # Remove elasticsearch credential references
+  extraEnvs: []
+  # Remove elasticsearch certificate mounts
+  secretMounts: []
+  # A log source of its own. The Deployment mounts no host paths, so without
+  # this it would tail a file that never appears and the install would prove
+  # nothing about the engine.
+  extraVolumes:
+    - name: ct-logs
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: ct-logs
+      mountPath: /ct-logs
+  filebeatConfig:
+    filebeat.yml: |
+
+      {{- if and .Values.tenx.enabled (ne .Values.tenx.kind "report") }}
+      filebeat.config.inputs:
+        enabled: true
+        path: {{ index .Values.tenx.inputs .Values.tenx.kind }}
+      {{- end }}
+
+      filebeat.inputs:
+      {{- if .Values.tenx.enabled }}
+      - type: filestream
+        id: tenx_internal
+        paths:
+          - ${TENX_LOG_PATH}/*.log
+        fields:
+          log_type: tenx_internal
+      {{- end }}
+      - type: filestream
+        id: ct-logs
+        paths:
+          - /ct-logs/app.log
+        {{- if .Values.tenx.enabled }}
+        processors:
+        - script:
+            lang: javascript
+            file: {{ index .Values.tenx.processors .Values.tenx.kind }}
+        {{- end }}
+
+      output.file:
+        path: "/tmp/filebeat-output"
+        filename: filebeat-events
+        rotate_every_kb: 10000
+
+# Writes the lines the input above reads, so the engine has traffic to return.
+extraContainers: |
+  - name: logger
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - 'i=0; while true; do i=$((i+1)); echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) INFO ct seq=$i request completed" >> /ct-logs/app.log; sleep 1; done'
+    volumeMounts:
+      - name: ct-logs
+        mountPath: /ct-logs
+
+# See the note in ct-values.yaml: this is here for the fork-PR fallback, where
+# 10x is off and the stock readiness probe would run 'filebeat test output'
+# against output.file.
+readinessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - |
+        #!/usr/bin/env bash -e
+        curl --fail 127.0.0.1:5066
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5

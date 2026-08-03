@@ -86,9 +86,11 @@ metricOutput(Log10xMetricRegistryFactory) requires a license.
 Get yours at https://console.log10x.com
 ```
 
-and exits 1 while Filebeat keeps running, so the pod stays up and the node ships
-raw. The licence baked into the public image is of type `limited` and does not
-satisfy this gate.
+and exits 1. The container goes with it in about three seconds, because the
+image's entrypoint runs `set -euo pipefail` around
+`exec filebeat "$@" 2>&1 | tenx-edge run ...`, so an unlicensed install
+crash-loops rather than shipping raw. The licence baked into the public image is
+of type `limited` and does not satisfy this gate.
 
 Supply it in one of two ways.
 
@@ -125,12 +127,18 @@ The container runs two processes joined by one pipe.
 exec filebeat "$@" 2>&1 | tenx-edge run ...
 ```
 
-Both probes used to test only the left half, so a container whose engine had died
-still answered `127.0.0.1:5066` and still passed `filebeat test output`. Measured
-on 1.1.38 with the engine `kill -9`ed: both probes exit 0, the container is
-`running=true`, and Kubernetes reports 1/1 Ready with zero restarts while the
-node ships nothing through 10x. Freezing the engine with `SIGSTOP` is worse,
-because nothing ever breaks the pipe and the container survives indefinitely.
+An engine that **exits** needs no probe. The entrypoint wraps that pipe in
+`set -euo pipefail`, so the engine's exit status takes PID 1 down and Kubernetes
+restarts the container in about three seconds, with or without this chart.
+
+An engine that **freezes** is what these probes are for, and it is silent.
+`SIGSTOP`, a traced process, a deadlock: the pid stays in the process table,
+nothing breaks the pipe, the entrypoint never returns. Measured on 1.1.39 with
+the old Filebeat-only probes, a `SIGSTOP`ped engine held the pod 1/1 Ready for
+150 seconds while 5.2MB backed up in the pipe. With the engine-aware probes the
+same freeze fails the next probe 22 seconds in, reporting
+`FAIL: engine pid 12 is stopped (state 'T'): frozen, not running`, and the
+container is restarted at 29 seconds.
 
 With `tenx.healthcheck.enabled` (the default) both probes run
 `/etc/tenx/probes/tenx-health.sh`, which keeps the Filebeat test and adds four
@@ -138,7 +146,7 @@ engine tests.
 
 | Test | Catches |
 |------|---------|
-| `pgrep -x tenx-edge` finds the process | engine exited, idle or with output configured |
+| `pgrep -x tenx-edge` finds the process | engine exited. Redundant with the entrypoint, kept because it costs nothing |
 | scheduler state is not `T`, `t`, `Z` or `X` | engine `SIGSTOP`ped, traced, or an unreaped corpse |
 | Filebeat's stdout inode is the engine's stdin inode | the two ends are no longer the same pipe |
 | cumulative CPU advanced within `tenx.healthcheck.stallSeconds` | engine deadlocked while still schedulable |
@@ -154,7 +162,8 @@ with no advance at all was 20 seconds. `stallSeconds` defaults to 60, three time
 that worst case.
 
 Set `tenx.healthcheck.enabled: false` to fall back to the Filebeat-only probes.
-That leaves a dead engine invisible to Kubernetes.
+A dead engine still restarts the container through the entrypoint; a frozen one
+becomes invisible to Kubernetes again.
 
 ## Configuration
 
@@ -243,6 +252,39 @@ daemonset:
         filename: filebeat-events
         rotate_every_kb: 10000
 ```
+
+### Workloads: DaemonSet and Deployment
+
+The chart ships two workloads. The DaemonSet is on by default and collects node
+logs. The Deployment (`deployment.enabled: true`) is the singleton for inputs
+that must run once per cluster rather than once per node, such as the `aws`
+input.
+
+Both run the same image and the same in-container engine, and from chart 1.5.0
+both are wired for 10x from the same templates in `_tenx.tpl`: the licence, the
+engine environment, the engine-aware probes and the git config fetcher.
+
+Before 1.5.0 the Deployment had none of that. It rendered no `TENX_*` variable
+at all, so the engine fell back to the limited key baked into the image, failed
+the licence gate on `metricOutput` and took the container down through the
+entrypoint's `pipefail`. A Deployment install with `tenx.enabled` at its default
+of `true` crash-looped from the first second. Its default `filebeatConfig` also
+had no read-back input and no script processor, so even a licensed engine would
+have had nothing routed to it.
+
+Set `daemonset.enabled: false` if you want the Deployment alone.
+
+### Chart CI
+
+`ct install` runs one install per file in `charts/filebeat/ci/`, one for the
+DaemonSet and one for the Deployment, with `tenx.enabled: true`. The licence
+comes from the `TENX_LICENSE_JWT` repository secret, written to a file and
+passed as `--set-file tenx.licenseJwt=...` so the token stays out of the process
+table; the chart puts it in a Secret of its own.
+
+Pull requests from forks cannot read repository secrets. Those runs install with
+`tenx.enabled=false` and the job prints a warning saying the engine went
+untested, rather than failing on a licence they were never going to have.
 
 ### Sample Values Files
 
