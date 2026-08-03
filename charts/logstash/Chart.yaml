@@ -7,10 +7,14 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.0.21
+version: 1.1.0
 appVersion: 1.1.39
 # Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
 # elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
+#
+# Deprecated is not the same as withdrawn. The chart stays in the index, so
+# anyone who finds it can install it, which is why 1.1.0 makes it work rather
+# than leaving four known failures in a published artifact.
 deprecated: true
 icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
 home: https://github.com/log-10x/elastic-helm-charts
@@ -20,6 +24,20 @@ sources:
   - https://github.com/elastic/logstash
 annotations:
   artifacthub.io/changes: |
+    - kind: added
+      description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart had no licence wiring at all, so every install crashed the sidecar on 'readStream(stream:logstash) requires a license' while Logstash kept shipping raw."
+    - kind: added
+      description: "The chart renders the two Logstash pipelines the round trip needs: tenx-ingest.conf hands events to the sidecar, tenx-destinations.conf binds the return port and receives them back, and pipelines.yml points at both. Sources, filters and destinations are values (tenx.pipeline.*). Set tenx.pipeline.managed=false to supply your own. Before this the chart shipped neither, so nothing bound the return port and the sidecar exited 1 with nothing to connect to."
+    - kind: added
+      description: "The sidecar waits for the Logstash tcp input to bind before launching the engine. Kubernetes starts both containers at once and Logstash needs most of a minute to boot, so the engine used to reach an unbound port and exit 1 into CrashLoopBackOff. Turn off with tenx.waitForLogstash.enabled=false."
+    - kind: fixed
+      description: "The sidecar listens on 5046 by default (tenx.inputPort), not 5044. The stock logstash image binds 5044 for its own beats input and both containers share one network namespace, so the sidecar died on 'Address already in use'. tenx.outputPort, tenx.outputHost, tenx.inputMessageField and tenx.outputEncodeType are configurable too, and a render where inputPort equals outputPort fails instead of shipping a guaranteed collision."
+    - kind: added
+      description: "A ConfigMap replaces the image's run/input/forwarder/logstash/config.yaml with the chart's socket settings. That file is the only thing the engine reads for them: the launch macro expands it into CLI options itself, so passing logstashInputPort again is 'option logstashInputPort (string) should be specified only once' and exit 2, and the documented overrideKey/overrideValue form fails the same way. Skipped when tenx.config.git or tenx.config.volume supplies the config tree."
+    - kind: fixed
+      description: "tenx.image.tag defaults to .Chart.AppVersion, the engine release the chart is built against. It defaulted to .Chart.Version, so a chart advertising appVersion 1.1.39 deployed log10x/pipeline-10x:1.0.21."
+    - kind: deprecated
+      description: "tenx.apiKey and tenx.license. They set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
     - kind: changed
       description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
     - kind: changed

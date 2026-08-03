@@ -1,4 +1,5 @@
-{{- if .Values.logstashConfig }}
+{{- $files := include "logstash.configFiles" . | fromYaml -}}
+{{- if $files }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -10,7 +11,7 @@ metadata:
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 data:
-{{- range $path, $config := .Values.logstashConfig }}
+{{- range $path, $config := $files }}
   {{ $path }}: |
 {{ tpl $config $ | indent 4 -}}
 {{- end -}}

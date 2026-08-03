@@ -1,0 +1,15 @@
+{{- if eq (include "tenx.socketConfigManaged" .) "true" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "logstash.fullname" . }}-tenx-config
+  labels:
+    app: "{{ template "logstash.fullname" . }}"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:
+  config.yaml: |
+{{ include "tenx.socketConfig" . | indent 4 }}
+{{- end }}
