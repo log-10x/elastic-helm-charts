@@ -4,6 +4,60 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: added
+          description: "The Deployment supports 10x. It now carries the licence, the engine environment, the engine-aware probes and 10x wiring in its default filebeatConfig. Until now it carried none of them, so an install with tenx.enabled at its default of true crash-looped from the first second: the engine fell back to the image's limited key, failed the licence gate and took the container down through the entrypoint's pipefail. Verified on a cluster, 188 of 188 generated events returned through the engine carrying tenx_hash."
+        - kind: added
+          description: "Chart CI installs with the engine running. ci/ct-values.yaml sets tenx.enabled=true and the lint-test workflow feeds a licence from the TENX_LICENSE_JWT repository secret with --set-file, so 'ct install' can fail on a broken engine. Every previous run pinned tenx.enabled=false. Fork pull requests, which cannot read secrets, install with the engine off and print a warning that says so."
+        - kind: added
+          description: "ci/ct-deployment-values.yaml, so 'ct install' exercises the Deployment as well as the DaemonSet."
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' and the entrypoint's pipefail took the container down with it."
+        - kind: added
+          description: "The liveness and readiness probes observe the 10x engine: the process exists, it is not stopped or a zombie, its stdin is still Filebeat's stdout, and its cumulative CPU is advancing. What this catches that nothing else does is a FROZEN engine, which is silent: SIGSTOP leaves the pid in the table, nothing breaks the pipe, and the old Filebeat-only probes held the pod 1/1 Ready for 150 seconds while 5.2MB backed up. Measured on 1.1.39, the engine-aware probe fails 22 seconds after the freeze with \"engine pid 12 is stopped (state 'T'): frozen, not running\" and the container restarts at 29 seconds. A dead engine is a different case and needs no probe: the entrypoint runs the pipeline under 'set -euo pipefail', so an engine that exits takes the container down in about three seconds on its own. Turn off with tenx.healthcheck.enabled=false."
+        - kind: changed
+          description: "The engine environment, volumes, mounts and git init container are defined once in _tenx.tpl and included by both workloads, so the DaemonSet and the Deployment cannot drift apart again."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They used to set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.variant defaults to 'native'. The 'jit' variant is retired: it was built from the jpackage 'edge' flavor, which has been removed. Existing -jit tags remain pullable and 'jit' remains an accepted value for anyone pinned to one."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: fixed
+          description: "TENX_RUN_ARGS launches '@run/input/forwarder/filebeat', the folder form the image itself defaults to. The previous '@run/input/forwarder/filebeat/receive/config.yaml' names a path the config tree no longer has, and the engine aborted at startup with 'error expanding launch macro'."
+        - kind: fixed
+          description: "tenx.inputs points at conf/tenxNix.yml, the readback snippet the image actually ships and the same file the engine reads the socket address from. The receive/ and optimize/ folders it named were removed from log-10x/modules."
+        - kind: fixed
+          description: "tenx.processors.optimize points at tenx-receive.js. tenx-optimize.js was deleted from log-10x/modules; optimize mode is receive plus the receiverOptimize env var, not a different script."
+        - kind: changed
+          description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
+        - kind: changed
+          description: "Sample values file is filebeat-receive.yaml for the default filter mode."
+    apiVersion: v2
+    appVersion: 1.1.39
+    created: "2026-08-03T22:23:32.542476941Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: 62d0873d70927596ffc721ea1c0f1a92d1dbb9fa40c5838f0a13a168cbd4adc5
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.5.0/filebeat-1.5.0.tgz
+    version: 1.5.0
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
           description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' while Filebeat kept running."
         - kind: added
           description: "The liveness and readiness probes now observe the 10x engine. They test that the process exists, that it is not stopped or a zombie, that its stdin is still Filebeat's stdout, and that its cumulative CPU is advancing. Previously both probes tested only Filebeat, so a killed or frozen engine still reported 1/1 Ready. Turn off with tenx.healthcheck.enabled=false."
@@ -980,4 +1034,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-03T04:27:02.111572591Z"
+generated: "2026-08-03T22:23:32.542648745Z"
