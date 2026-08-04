@@ -8,6 +8,11 @@ keywords:
   - elastic
   - logstash
 version: 1.2.0
+# The engine release this chart is built against, and the tag the sidecar
+# deploys by default. It has to be a release whose config tree resolves the
+# TENX_LOGSTASH_* variables the chart now sets; on an older one the shipped
+# run/input/forwarder/logstash/config.yaml pins literal ports, the variables
+# are ignored, and the sidecar binds 5044 into "Address already in use".
 appVersion: 1.1.39
 # Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
 # elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
@@ -24,6 +29,8 @@ sources:
   - https://github.com/elastic/logstash
 annotations:
   artifacthub.io/changes: |
+    - kind: changed
+      description: "The sidecar's socket settings travel as TENX_LOGSTASH_* environment variables. The chart no longer renders a ConfigMap holding a second copy of the image's run/input/forwarder/logstash/config.yaml, which drifted the moment the shipped file gained a key with nothing to detect it. Requires an engine image whose config tree resolves those variables through TenXEnv.get."
     - kind: added
       description: "The 10x sidecar has probes. It had none, so the kubelet marked the container Ready the moment it was created and never looked again: an install whose licence was the string not-a-jwt returned rc=0 with the pod 2/2 Running, the tenx container ready=true, restarts=0, and the engine never launched. A frozen engine (SIGSTOP) held that same 2/2 Running with zero restarts for as long as it was watched, while events entering the sidecar stopped coming back."
     - kind: added

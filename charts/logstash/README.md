@@ -87,14 +87,15 @@ Three things about the ports are worth knowing before you change them:
 - The engine opens the write-back socket to 5045 as it builds its pipeline,
   before Kubernetes has given Logstash time to bind it. `tenx.waitForLogstash`
   polls the port first, then execs the engine.
-- The engine-side values reach it through a ConfigMap that replaces the image's
-  `run/input/forwarder/logstash/config.yaml`, because that file is the only
-  place the engine reads them from. Setting them as environment variables or as
-  extra launch arguments does not work, and the second one is fatal: the launch
-  macro expands the file into CLI options itself, so a repeat is `option
-  'logstashInputPort' (string) should be specified only once` and exit 2.
-  `tenx.config.git` or `tenx.config.volume` hands the whole config tree to you,
-  ports included, and the chart stops rendering that ConfigMap.
+- The engine-side values reach it as `TENX_LOGSTASH_*` environment variables.
+  The shipped `run/input/forwarder/logstash/config.yaml` resolves each one
+  through `TenXEnv.get("<VAR>", <default>)` before the launch macro expands the
+  file into CLI options, so one value reaches the parser and there is nothing
+  to collide with. Passing the same settings as bare arguments, or through
+  `overrideKey`/`overrideValue`, is still exit 2 with `option
+  'logstashInputPort' (string) should be specified only once`. This needs an
+  engine image whose config tree resolves those variables; on an older image
+  the file pins literals and the sidecar binds 5044.
 
 To hand-write the whole thing instead, set `tenx.pipeline.managed: false` and
 supply `logstashPipeline` and `logstashConfig` yourself. Any key you set under
