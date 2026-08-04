@@ -414,6 +414,13 @@ tenx:
   #              restarts indefinitely, which is the one state that needs a
   #              kill.
   #
+  # The readiness test looks for a listener on tenx.inputPort, which the chart
+  # renders into the probe's environment from this same value. With
+  # tenx.config.git.enabled or tenx.config.volume.enabled the engine's own port
+  # comes from that config tree instead, so the pair has to agree or the
+  # container never reports Ready. That is the same "keep the two in sync" rule
+  # the socket section states, with a louder failure.
+  #
   healthcheck:
     # Turn off to go back to a sidecar with no probes. A dead engine still
     # restarts the container by exiting; a frozen one becomes invisible to

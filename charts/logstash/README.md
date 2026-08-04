@@ -135,6 +135,12 @@ kills before its peer is up. Set it explicitly to take the number back.
 Nothing keys off event flow. An idle Logstash is a healthy Logstash, and the
 engine accrues CPU on its own timers whatever the traffic.
 
+The probe learns the port from `tenx.inputPort`. With `tenx.config.git.enabled`
+or `tenx.config.volume.enabled` the engine takes its own port from that config
+tree instead, so the pair has to agree or the container never reports Ready.
+That is the same "keep the two in sync" rule the socket settings already carry,
+with a louder failure.
+
 ### Log10x Modes
 
 | Mode | Description |
