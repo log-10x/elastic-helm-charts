@@ -84,6 +84,65 @@ Absolute path the licence is projected to under "file" delivery.
 {{- end -}}
 
 {{/*
+True when the sidecar gets engine-aware probes.
+*/}}
+{{- define "tenx.healthcheckEnabled" -}}
+{{- if and .Values.tenx.enabled .Values.tenx.healthcheck.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+One probe stanza. Takes {ctx, probe, mode}.
+
+Every field of the caller's probe is carried through except the handler, which
+becomes the health script in the requested mode. A probe carrying two handlers
+is rejected by the API server, so the handler is replaced rather than merged.
+*/}}
+{{- define "tenx.probe" -}}
+{{- $rest := omit .probe "exec" "httpGet" "tcpSocket" "grpc" -}}
+exec:
+  command:
+    - sh
+    - /etc/tenx/probes/tenx-health.sh
+    - {{ .mode }}
+{{- if $rest }}
+{{ toYaml $rest }}
+{{- end }}
+{{- end -}}
+
+{{/*
+failureThreshold for the startup probe.
+
+The startup probe is what keeps the liveness probe off the container while the
+engine is not up yet, so its budget has to cover both slow parts of a normal
+start: the wait for Logstash to bind, and the engine's own pipeline build. Both
+are minutes, not seconds. Measured on this chart at 1.1.39, on a contended
+node, the engine printed its first line 40 seconds after exec and reached
+"pipeline units:" 142 seconds after that.
+
+Deriving it from tenx.waitForLogstash.timeoutSeconds is what stops the two from
+drifting apart: raising the wait to 1800 without raising this would give a
+container that the kubelet kills before its peer is ever up. Set
+tenx.healthcheck.startupProbe.failureThreshold to take the number back.
+*/}}
+{{- define "tenx.startupFailureThreshold" -}}
+{{- $hc := .Values.tenx.healthcheck -}}
+{{- if $hc.startupProbe.failureThreshold -}}
+{{- $hc.startupProbe.failureThreshold -}}
+{{- else -}}
+{{- $period := int ($hc.startupProbe.periodSeconds | default 10) -}}
+{{- if lt $period 1 }}{{- fail "tenx.healthcheck.startupProbe.periodSeconds must be at least 1." -}}{{- end -}}
+{{- $wait := 0 -}}
+{{- if .Values.tenx.waitForLogstash.enabled -}}
+{{- $wait = int .Values.tenx.waitForLogstash.timeoutSeconds -}}
+{{- end -}}
+{{- $budget := add $wait (int $hc.startupGraceSeconds) -}}
+{{- div (add $budget (sub $period 1)) $period -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 True when the chart renders the Logstash pipelines that talk to the sidecar.
 */}}
 {{- define "tenx.managedPipeline" -}}

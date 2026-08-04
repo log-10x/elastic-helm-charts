@@ -170,6 +170,12 @@ spec:
               - key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
                 path: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
         {{- end }}
+        {{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
+        - name: tenx-probes
+          configMap:
+            name: {{ template "logstash.fullname" . }}-tenx-probes
+            defaultMode: 0555
+        {{- end }}
         {{- if or .Values.tenx.config.git.enabled .Values.tenx.symbols.git.enabled }}
         - name: tenx-git
           emptyDir: {}
@@ -382,6 +388,34 @@ spec:
           - name: tenx-in
             containerPort: {{ .Values.tenx.inputPort }}
             protocol: TCP
+        {{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
+        # The sidecar carried no probe of any kind, so the kubelet reported it
+        # Ready the moment the container was created and never looked again.
+        # Measured on 1.1.39: an install whose licence was the string
+        # "not-a-jwt" showed the tenx container ready=true, restarts=0, and no
+        # engine output at all. Chart CI cannot fail on an engine that is not
+        # running.
+        #
+        # A dead engine needs no probe. It is pid 1, so it takes the container
+        # with it and the kubelet restarts it. These three cover the two states
+        # that are invisible instead:
+        #
+        #   startup    the engine has not been launched yet, because the wait
+        #              loop is still polling for Logstash. Nothing is wrong, so
+        #              this holds the liveness probe off entirely rather than
+        #              restarting a container whose only problem is its peer.
+        #   readiness  the engine is not listening on tenx.inputPort, so events
+        #              handed to it go nowhere.
+        #   liveness   the engine is in the process table and doing nothing:
+        #              stopped, traced, or deadlocked. The container stays
+        #              Running with zero restarts for as long as you watch it.
+        startupProbe:
+{{ include "tenx.probe" (dict "ctx" . "probe" (merge (dict "failureThreshold" (include "tenx.startupFailureThreshold" . | int)) .Values.tenx.healthcheck.startupProbe) "mode" "startup") | indent 10 }}
+        readinessProbe:
+{{ include "tenx.probe" (dict "ctx" . "probe" .Values.tenx.healthcheck.readinessProbe "mode" "readiness") | indent 10 }}
+        livenessProbe:
+{{ include "tenx.probe" (dict "ctx" . "probe" .Values.tenx.healthcheck.livenessProbe "mode" "liveness") | indent 10 }}
+        {{- end }}
         env:
           # The engine reads exactly one credential, the licence JWT, from
           # TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the Receiver
@@ -400,6 +434,15 @@ spec:
                 name: {{ include "tenx.licenseSecretName" . }}
                 key: {{ .Values.tenx.licenseSecretKey | default "license-jwt" }}
           {{- end }}
+          {{- end }}
+          {{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
+          # Read by the probe script only. The engine takes its socket settings
+          # from the tenx-config ConfigMap, so this is the probe's copy of the
+          # port and it is rendered from the same value.
+          - name: TENX_PROBE_INPUT_PORT
+            value: {{ .Values.tenx.inputPort | quote }}
+          - name: TENX_PROBE_STALL_SECONDS
+            value: {{ .Values.tenx.healthcheck.stallSeconds | quote }}
           {{- end }}
           {{- if .Values.tenx.runtimeName }}
           - name: TENX_RUNTIME_NAME
@@ -431,6 +474,11 @@ spec:
           - name: tenx-config
             mountPath: /etc/tenx/config/pipelines/run/input/forwarder/logstash/config.yaml
             subPath: config.yaml
+            readOnly: true
+          {{- end }}
+          {{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
+          - name: tenx-probes
+            mountPath: /etc/tenx/probes
             readOnly: true
           {{- end }}
           {{- if and (eq (include "tenx.licenseConfigured" .) "true") (eq (include "tenx.licenseDelivery" .) "file") }}

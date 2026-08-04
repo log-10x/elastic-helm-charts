@@ -1,0 +1,15 @@
+{{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "logstash.fullname" . }}-tenx-probes
+  labels:
+    app: "{{ template "logstash.fullname" . }}"
+    chart: "{{ .Chart.Name }}"
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+data:
+  tenx-health.sh: |
+{{ .Files.Get "files/tenx-health.sh" | indent 4 }}
+{{- end }}
