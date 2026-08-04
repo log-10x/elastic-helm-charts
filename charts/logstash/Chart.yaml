@@ -7,7 +7,7 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.1.0
+version: 1.2.0
 appVersion: 1.1.39
 # Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
 # elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
@@ -24,6 +24,16 @@ sources:
   - https://github.com/elastic/logstash
 annotations:
   artifacthub.io/changes: |
+    - kind: added
+      description: "The 10x sidecar has probes. It had none, so the kubelet marked the container Ready the moment it was created and never looked again: an install whose licence was the string not-a-jwt returned rc=0 with the pod 2/2 Running, the tenx container ready=true, restarts=0, and the engine never launched. A frozen engine (SIGSTOP) held that same 2/2 Running with zero restarts for as long as it was watched, while events entering the sidecar stopped coming back."
+    - kind: added
+      description: "readinessProbe fails unless the engine itself owns a listening socket on tenx.inputPort. readStream(stream:logstash) binds that port at the end of pipeline construction, after the licence is verified, so an engine that cannot licence itself or load its config never passes. The socket has to be one of pid 1's own descriptors, because Logstash shares the network namespace and a bare port check would pass on the wrong process."
+    - kind: added
+      description: "livenessProbe fails on an engine that is in the process table and doing nothing: state T or t, Z or X, or no cumulative CPU for tenx.healthcheck.stallSeconds. That is the one broken state the container survives, since a dead engine is pid 1 and takes the container with it."
+    - kind: added
+      description: "startupProbe reports the wait for Logstash to bind. While it is pending the kubelet runs neither of the other two probes, so a slow peer cannot get the container restarted. Its failureThreshold is derived from tenx.waitForLogstash.timeoutSeconds plus tenx.healthcheck.startupGraceSeconds rather than fixed, so raising the wait cannot leave a container the kubelet kills before its peer is up."
+    - kind: added
+      description: "charts/logstash/ci/ct-values.yaml turns the engine on for chart CI. The chart had no ci/ file, so every ct install ran with tenx.enabled=false and no CI run had ever started the engine."
     - kind: added
       description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart had no licence wiring at all, so every install crashed the sidecar on 'readStream(stream:logstash) requires a license' while Logstash kept shipping raw."
     - kind: added

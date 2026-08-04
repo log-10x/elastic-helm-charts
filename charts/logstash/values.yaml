@@ -387,6 +387,88 @@ tenx:
     timeoutSeconds: 300
 
   # ===========================================================================
+  # HEALTH CHECKS
+  # ===========================================================================
+  #
+  # The sidecar used to carry no probe at all, so the kubelet marked it Ready
+  # the moment the container was created and never looked again. Measured on
+  # this chart at 1.1.39: an install whose licence was the literal string
+  # "not-a-jwt" reported the tenx container ready=true with restarts=0 and no
+  # engine output whatsoever. Chart CI could not fail on a broken engine.
+  #
+  # A dead engine needs no probe. The container command execs the engine over
+  # itself, so the engine is pid 1: when it exits the container exits and the
+  # kubelet restarts it. The three probes below cover what nothing else sees.
+  #
+  #   startup    The wait loop is still polling and the engine has not been
+  #              launched. Not a fault, so this is the probe that reports it:
+  #              while a startup probe is pending the kubelet runs neither of
+  #              the other two, which is what keeps liveness from restarting a
+  #              container whose only problem is that Logstash is slow.
+  #   readiness  The engine is not listening on inputPort. Everything Logstash
+  #              hands it goes nowhere. An engine that cannot verify its
+  #              licence, cannot load its config, or is still building its
+  #              pipeline never binds.
+  #   liveness   The engine is in the process table and doing nothing: stopped,
+  #              traced, or deadlocked. The container stays Running with zero
+  #              restarts indefinitely, which is the one state that needs a
+  #              kill.
+  #
+  healthcheck:
+    # Turn off to go back to a sidecar with no probes. A dead engine still
+    # restarts the container by exiting; a frozen one becomes invisible to
+    # Kubernetes again.
+    #
+    enabled: true
+
+    # How long the engine may burn no CPU before the liveness probe calls it
+    # frozen. Nothing here keys off event flow, because an idle Logstash is a
+    # healthy Logstash: the engine accrues CPU on its own timers whatever the
+    # traffic. Raise it on heavily oversubscribed nodes, where a starved engine
+    # can legitimately go quiet for longer.
+    #
+    stallSeconds: 60
+
+    # Head-room, on top of waitForLogstash.timeoutSeconds, for the engine's own
+    # boot. It loads the config tree, compiles the pipeline and only then binds
+    # inputPort. Measured on a contended node at 1.1.39: 40 seconds from exec to
+    # the first log line, 142 more to "pipeline units:".
+    #
+    # This feeds startupProbe.failureThreshold, which is derived rather than
+    # fixed so that raising the wait cannot leave a container the kubelet kills
+    # before its peer is up.
+    #
+    startupGraceSeconds: 600
+
+    # Probe timings. The handler is the health script in every case; each of
+    # these is passed through to the probe untouched, so this is the one place
+    # to tune them.
+    #
+    # failureThreshold 3 at periodSeconds 10 means a frozen engine is restarted
+    # about 30 seconds after the probe first fails. A stopped or traced engine
+    # fails on the very first sample. A deadlocked one that stays schedulable is
+    # caught by the CPU rule instead, at stallSeconds plus those 30 seconds.
+    #
+    startupProbe:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      # Left empty the chart computes it as
+      #   ceil((waitForLogstash.timeoutSeconds + startupGraceSeconds) / periodSeconds)
+      # which is 90 at the defaults. Set a number to take it back.
+      failureThreshold: null
+
+    readinessProbe:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+
+    livenessProbe:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+  # ===========================================================================
   # PIPELINES
   # ===========================================================================
   #

@@ -1,0 +1,84 @@
+# CI test values: one replica, no dependency outside the test cluster, and the
+# 10x engine ON.
+#
+# The chart had no ci/ file at all, so every `ct install` ran with the shipped
+# default of tenx.enabled=false. No chart CI run had ever started the engine,
+# and with the sidecar carrying no probe a run that did start one could not have
+# failed on it either: the kubelet reported the tenx container Ready the moment
+# it was created. Both halves of that are fixed here and in values.yaml.
+#
+# The engine needs a licence. lint-test.yaml passes
+# --set-file tenx.licenseJwt=<file written from the TENX_LICENSE_JWT repository
+# secret>, and the chart puts the token in a Secret of its own, so nothing has
+# to exist in the namespace before the install. Pull requests from forks get no
+# secret; that branch of the workflow re-runs with tenx.enabled=false and says
+# in the job summary that the engine went untested.
+
+replicas: 1
+
+tenx:
+  enabled: true
+
+  # ct.yaml allows 500s per install. The startup budget has to fit inside it,
+  # since startupProbe.failureThreshold is computed as
+  #   ceil((waitForLogstash.timeoutSeconds + startupGraceSeconds) / periodSeconds)
+  # and a container still inside that budget is neither Ready nor failed, which
+  # would leave `helm --wait` to hit the deadline instead of the probe reporting
+  # anything. 180 + 240 = 420s, and the run has to get Logstash up, the engine
+  # launched and the port bound within it.
+  waitForLogstash:
+    timeoutSeconds: 180
+
+  healthcheck:
+    startupGraceSeconds: 240
+
+  # Small enough to co-schedule with Logstash on a single runner.
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# The default output is stdout, so the round trip completes inside the pod and
+# CI needs no Elasticsearch. The default ingest input is `beats` on 5044, which
+# binds and listens without a peer.
+
+# A GitHub runner has two cores, and Logstash spends most of its startup in
+# JRuby. Turning invokedynamic off trades steady-state throughput, which no CI
+# install measures, for a shorter boot.
+logstashJavaOpts: "-Xmx512m -Xms512m -Djruby.compile.invokedynamic=false"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "1Gi"
+  limits:
+    cpu: "2000m"
+    memory: "1Gi"
+
+# Logstash itself needs longer than the chart default before its API answers on
+# a shared runner, and a restart here would push the 10x sidecar past its own
+# startup budget for a reason that has nothing to do with the engine.
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 420
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 40
+  successThreshold: 1
+
+persistence:
+  enabled: false
