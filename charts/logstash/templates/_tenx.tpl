@@ -163,54 +163,36 @@ binds fail with "Address already in use" and the sidecar exits 1.
 {{- end -}}
 
 {{/*
-True when the chart owns the engine-side socket settings, which it does unless
-the whole 10x config tree is being supplied from Git or a volume. In those cases
-the ports live in that tree and tenx.inputPort / tenx.outputPort reach only the
-Logstash half of the pair.
+The engine-side socket settings, as environment variables.
+
+The shipped run/input/forwarder/logstash/config.yaml resolves each of these
+through TenXEnv.get("<VAR>", <default>), which runs BEFORE the
+@run/input/forwarder/logstash macro expands the file into launch arguments. One
+occurrence reaches picocli either way, so there is nothing to collide with and
+no OverwrittenOptionException. Passing the same values as bare arguments, or
+through overrideKey/overrideValue, is still exit 2: by then the macro has
+already contributed its own copy.
+
+This is why the chart no longer ships a ConfigMap holding a second copy of a
+file that lives in the image. That copy went stale the moment the shipped file
+gained a key, and nothing detected it.
+
+Requires an engine image whose config tree resolves these variables. On an
+older image the file pins literals, the variables are ignored, and the sidecar
+binds 5044 and dies on "Address already in use" against the stock logstash
+image's beats input.
 */}}
-{{- define "tenx.socketConfigManaged" -}}
-{{- if and .Values.tenx.enabled (not .Values.tenx.config.git.enabled) (not .Values.tenx.config.volume.enabled) -}}
-true
-{{- end -}}
-{{- end -}}
-
-{{/*
-Replacement for the image's own
-  /etc/tenx/config/pipelines/run/input/forwarder/logstash/config.yaml
-
-This file, not any argument, is where the engine's socket settings come from.
-The @run/input/forwarder/logstash launch macro expands it into CLI options
-already, so passing logstashInputPort a second time is a picocli
-OverwrittenOptionException and exit 2, and that holds for the documented
-overrideKey/overrideValue form too. Replacing the file is what works, measured
-on 1.1.39: "Reading events from Logstash tcp output on tcp://0.0.0.0:5046".
-
-Keep the include list identical to the image's copy. It is what pulls in the
-module that defines these options in the first place.
-*/}}
-{{- define "tenx.socketConfig" -}}
-# Rendered by the log10x/logstash chart. Replaces the copy shipped in the image
-# so tenx.inputPort / tenx.outputPort / tenx.outputHost take effect.
-tenx: run
-
-include:
-  - run/input/forwarder/config.yaml
-  - run/modules/input/forwarder/logstash
-
-logstash:
-
-  input:
-    # The port the engine listens on for the Logstash `tcp` output. Not 5044:
-    # the stock logstash image binds that for its own `beats` input, and the two
-    # containers share a network namespace.
-    port: {{ .Values.tenx.inputPort }}
-    messageField: {{ .Values.tenx.inputMessageField | default "message" }}
-
-  output:
-    # The Logstash `tcp` input that receives processed events back.
-    host: {{ .Values.tenx.outputHost }}
-    port: {{ .Values.tenx.outputPort }}
-    encodeType: {{ .Values.tenx.outputEncodeType }}
+{{- define "tenx.socketEnv" -}}
+- name: TENX_LOGSTASH_INPUT_PORT
+  value: {{ .Values.tenx.inputPort | quote }}
+- name: TENX_LOGSTASH_INPUT_MESSAGE_FIELD
+  value: {{ .Values.tenx.inputMessageField | default "message" | quote }}
+- name: TENX_LOGSTASH_OUTPUT_HOST
+  value: {{ .Values.tenx.outputHost | quote }}
+- name: TENX_LOGSTASH_OUTPUT_PORT
+  value: {{ .Values.tenx.outputPort | quote }}
+- name: TENX_LOGSTASH_OUTPUT_ENCODE_TYPE
+  value: {{ .Values.tenx.outputEncodeType | quote }}
 {{- end -}}
 
 {{/*

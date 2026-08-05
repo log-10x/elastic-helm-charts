@@ -339,16 +339,26 @@ tenx:
   #
   # Both ports must differ from each other. The render fails if they do not.
   #
-  # These are written into a ConfigMap that REPLACES the copy of
-  # run/input/forwarder/logstash/config.yaml shipped in the image. That file,
-  # not any argument or environment variable, is what the engine reads: the
-  # launch macro expands it into CLI options itself, so passing the same option
-  # again is "option 'logstashInputPort' (string) should be specified only
-  # once" and exit 2, including via overrideKey/overrideValue.
+  # These reach the engine as TENX_LOGSTASH_* environment variables. The
+  # shipped run/input/forwarder/logstash/config.yaml resolves each setting
+  # through TenXEnv.get("<VAR>", <default>), which runs before the
+  # @run/input/forwarder/logstash macro turns the file into launch arguments,
+  # so exactly one value reaches the parser. Passing the same settings as bare
+  # arguments, or through overrideKey/overrideValue, is still exit 2 with
+  # "option 'logstashInputPort' (string) should be specified only once": by
+  # then the macro has already contributed its copy.
+  #
+  # The chart used to ship a ConfigMap holding a second copy of that file. It
+  # went stale the moment the shipped file gained a key and nothing detected
+  # the drift, which is why it is gone.
+  #
+  # This needs an engine image whose config tree resolves those variables. On
+  # an older image the file pins literals, the variables are ignored, and the
+  # sidecar binds 5044 and dies on "Address already in use".
   #
   # With tenx.config.git.enabled or tenx.config.volume.enabled the whole 10x
-  # config tree comes from you, so the ports come from there too and these
-  # values reach only the Logstash half of the pair. Keep the two in sync.
+  # config tree comes from you. The variables are still set, so they take
+  # effect as long as your copy of that file keeps the TenXEnv.get defaults.
   #
   inputPort: 5046
   outputPort: 5045
