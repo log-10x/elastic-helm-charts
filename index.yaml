@@ -576,6 +576,60 @@ entries:
   logstash:
   - annotations:
       artifacthub.io/changes: |
+        - kind: changed
+          description: "The sidecar's socket settings travel as TENX_LOGSTASH_* environment variables. The chart no longer renders a ConfigMap holding a second copy of the image's run/input/forwarder/logstash/config.yaml, which drifted the moment the shipped file gained a key with nothing to detect it. Requires an engine image whose config tree resolves those variables through TenXEnv.get."
+        - kind: added
+          description: "The 10x sidecar has probes. It had none, so the kubelet marked the container Ready the moment it was created and never looked again: an install whose licence was the string not-a-jwt returned rc=0 with the pod 2/2 Running, the tenx container ready=true, restarts=0, and the engine never launched. A frozen engine (SIGSTOP) held that same 2/2 Running with zero restarts for as long as it was watched, while events entering the sidecar stopped coming back."
+        - kind: added
+          description: "readinessProbe fails unless the engine itself owns a listening socket on tenx.inputPort. readStream(stream:logstash) binds that port at the end of pipeline construction, after the licence is verified, so an engine that cannot licence itself or load its config never passes. The socket has to be one of pid 1's own descriptors, because Logstash shares the network namespace and a bare port check would pass on the wrong process."
+        - kind: added
+          description: "livenessProbe fails on an engine that is in the process table and doing nothing: state T or t, Z or X, or no cumulative CPU for tenx.healthcheck.stallSeconds. That is the one broken state the container survives, since a dead engine is pid 1 and takes the container with it."
+        - kind: added
+          description: "startupProbe reports the wait for Logstash to bind. While it is pending the kubelet runs neither of the other two probes, so a slow peer cannot get the container restarted. Its failureThreshold is derived from tenx.waitForLogstash.timeoutSeconds plus tenx.healthcheck.startupGraceSeconds rather than fixed, so raising the wait cannot leave a container the kubelet kills before its peer is up."
+        - kind: added
+          description: "charts/logstash/ci/ct-values.yaml turns the engine on for chart CI. The chart had no ci/ file, so every ct install ran with tenx.enabled=false and no CI run had ever started the engine."
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart had no licence wiring at all, so every install crashed the sidecar on 'readStream(stream:logstash) requires a license' while Logstash kept shipping raw."
+        - kind: added
+          description: "The chart renders the two Logstash pipelines the round trip needs: tenx-ingest.conf hands events to the sidecar, tenx-destinations.conf binds the return port and receives them back, and pipelines.yml points at both. Sources, filters and destinations are values (tenx.pipeline.*). Set tenx.pipeline.managed=false to supply your own. Before this the chart shipped neither, so nothing bound the return port and the sidecar exited 1 with nothing to connect to."
+        - kind: added
+          description: "The sidecar waits for the Logstash tcp input to bind before launching the engine. Kubernetes starts both containers at once and Logstash needs most of a minute to boot, so the engine used to reach an unbound port and exit 1 into CrashLoopBackOff. Turn off with tenx.waitForLogstash.enabled=false."
+        - kind: fixed
+          description: "The sidecar listens on 5046 by default (tenx.inputPort), not 5044. The stock logstash image binds 5044 for its own beats input and both containers share one network namespace, so the sidecar died on 'Address already in use'. tenx.outputPort, tenx.outputHost, tenx.inputMessageField and tenx.outputEncodeType are configurable too, and a render where inputPort equals outputPort fails instead of shipping a guaranteed collision."
+        - kind: added
+          description: "A ConfigMap replaces the image's run/input/forwarder/logstash/config.yaml with the chart's socket settings. That file is the only thing the engine reads for them: the launch macro expands it into CLI options itself, so passing logstashInputPort again is 'option logstashInputPort (string) should be specified only once' and exit 2, and the documented overrideKey/overrideValue form fails the same way. Skipped when tenx.config.git or tenx.config.volume supplies the config tree."
+        - kind: fixed
+          description: "tenx.image.tag defaults to .Chart.AppVersion, the engine release the chart is built against. It defaulted to .Chart.Version, so a chart advertising appVersion 1.1.39 deployed log10x/pipeline-10x:1.0.21."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
+          description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
+    apiVersion: v2
+    appVersion: 1.1.45
+    created: "2026-08-05T00:53:26.340180544Z"
+    deprecated: true
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: 543c8ba4c7f51ceb919f96abdd457c0d5e21814445ce177aa1b324a10ed32e55
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.3.0/logstash-1.3.0.tgz
+    version: 1.3.0
+  - annotations:
+      artifacthub.io/changes: |
         - kind: added
           description: "The 10x sidecar has probes. It had none, so the kubelet marked the container Ready the moment it was created and never looked again: an install whose licence was the string not-a-jwt returned rc=0 with the pod 2/2 Running, the tenx container ready=true, restarts=0, and the engine never launched. A frozen engine (SIGSTOP) held that same 2/2 Running with zero restarts for as long as it was watched, while events entering the sidecar stopped coming back."
         - kind: added
@@ -1128,4 +1182,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-04T04:48:57.529908245Z"
+generated: "2026-08-05T00:53:26.340330397Z"
