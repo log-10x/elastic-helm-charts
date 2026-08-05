@@ -423,8 +423,8 @@ spec:
           {{- end }}
           {{- if eq (include "tenx.healthcheckEnabled" .) "true" }}
           # Read by the probe script only. The engine takes its socket settings
-          # from the tenx-config ConfigMap, so this is the probe's copy of the
-          # port and it is rendered from the same value.
+          # from TENX_LOGSTASH_INPUT_PORT, so this is the probe's copy of the
+          # same value, rendered from the same source.
           - name: TENX_PROBE_INPUT_PORT
             value: {{ .Values.tenx.inputPort | quote }}
           - name: TENX_PROBE_STALL_SECONDS

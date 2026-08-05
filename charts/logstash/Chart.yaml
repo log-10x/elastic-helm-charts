@@ -7,13 +7,13 @@ keywords:
   - logging
   - elastic
   - logstash
-version: 1.2.0
+version: 1.3.0
 # The engine release this chart is built against, and the tag the sidecar
 # deploys by default. It has to be a release whose config tree resolves the
 # TENX_LOGSTASH_* variables the chart now sets; on an older one the shipped
 # run/input/forwarder/logstash/config.yaml pins literal ports, the variables
 # are ignored, and the sidecar binds 5044 into "Address already in use".
-appVersion: 1.1.39
+appVersion: 1.1.45
 # Deprecated: retired. Use the log10x/edge-10x sidecar on the upstream
 # elastic/logstash chart instead (https://doc.log10x.com/apps/receiver/deploy/).
 #
