@@ -37,7 +37,7 @@ The Log10x engine is integrated directly into the Filebeat container image. Enab
 ```yaml
 tenx:
   enabled: true
-  licenseJwt: "YOUR-LICENSE-JWT"   # required; download from https://console.log10x.com
+  licenseJwt: "YOUR-LICENSE-JWT"   # optional; without it the engine evaluates for 30 days. See https://doc.log10x.com/manage/license/
   kind: "receive"  # Options: report, receive, optimize
   variant: "native"  # image tag suffix; "jit" is retired
   runtimeName: "my-filebeat-instance"
@@ -83,7 +83,7 @@ even hand events back. It prints
 
 ```
 metricOutput(Log10xMetricRegistryFactory) requires a license.
-Get yours at https://console.log10x.com
+Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
 ```
 
 and exits 1. The container goes with it in about three seconds, because the
@@ -174,7 +174,7 @@ becomes invisible to Kubernetes again.
 | `tenx.enabled` | Enable Log10x engine | `true` |
 | `tenx.variant` | Image tag suffix on `log10x/filebeat-10x:<appVersion>-<variant>`. Must be `jit` or `native`; any other value, or null, fails the render. `native` is the only variant still built; `jit` is retired. | `native` |
 | `tenx.debug` | Enable debug logging | `false` |
-| `tenx.licenseJwt` | Log10x licence JWT. Required: the engine does not start without one. The chart stores it in a Secret. | `""` |
+| `tenx.licenseJwt` | Log10x licence JWT. Optional: without one the engine runs on its built-in 30-day evaluation licence. When set, the chart stores it in a Secret. | `""` |
 | `tenx.licenseSecret` | Name of an existing Secret holding the licence. Takes precedence over `licenseJwt`. | `""` |
 | `tenx.licenseSecretKey` | Key inside the licence Secret | `license-jwt` |
 | `tenx.licenseDelivery` | `file` projects the Secret and sets `TENX_LICENSE_FILE`; `env` injects `TENX_LICENSE_KEY` | `file` |

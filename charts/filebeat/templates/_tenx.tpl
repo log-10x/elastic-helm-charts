@@ -143,11 +143,10 @@ down through the entrypoint's pipefail. A Deployment install crash-looped from
 the first second with tenx.enabled left at its default of true.
 */}}
 {{- define "tenx.env" -}}
-# The engine reads exactly one credential, the licence JWT, and it reads it from
-# TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the receiver pipeline fails
-# to build, the engine exits 1, and the entrypoint's 'set -o pipefail' takes the
-# whole container with it, so the licence is what decides whether this workload
-# starts at all.
+# The engine reads exactly one credential, the licence JWT, from
+# TENX_LICENSE_FILE or TENX_LICENSE_KEY. Optional: without one the engine runs
+# on its built-in 30-day evaluation licence (10 nodes, airgapped), so an
+# unlicensed install starts and evaluates rather than crash-looping.
 {{- if eq (include "tenx.licenseConfigured" .) "true" }}
 {{- if eq (include "tenx.licenseDelivery" .) "file" }}
 - name: TENX_LICENSE_FILE

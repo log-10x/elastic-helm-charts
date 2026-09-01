@@ -46,7 +46,7 @@ tenx:
   # engine prints
   #
   #   metricOutput(Log10xMetricRegistryFactory) requires a license.
-  #   Get yours at https://console.log10x.com
+  #   Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
   #
   # and exits 1. The container goes with it in about three seconds: the image's
   # docker-entrypoint runs
@@ -72,7 +72,7 @@ tenx:
   #                      The chart cannot see that, so it does not fail the
   #                      render, and you own the outcome.
   #
-  # The signed JWT, downloaded from https://console.log10x.com
+  # The signed JWT; see https://doc.log10x.com/manage/license/
   # Leave empty and set licenseSecret if the token is managed elsewhere.
   #
   licenseJwt: ""

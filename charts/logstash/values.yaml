@@ -539,7 +539,7 @@ tenx:
   # With no licence the sidecar prints
   #
   #   readStream(stream:logstash) requires a license.
-  #   Get yours at https://console.log10x.com
+  #   Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
   #
   # and exits 1, WHILE LOGSTASH KEEPS RUNNING and keeps shipping raw.
   #
@@ -556,7 +556,7 @@ tenx:
   #                      The chart cannot see that, so it does not fail the
   #                      render, and you own the outcome.
   #
-  # The signed JWT, downloaded from https://console.log10x.com
+  # The signed JWT; see https://doc.log10x.com/manage/license/
   #
   licenseJwt: ""
 
