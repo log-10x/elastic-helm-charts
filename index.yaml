@@ -33,6 +33,60 @@ entries:
           description: "Sample values file is filebeat-receive.yaml for the default filter mode."
     apiVersion: v2
     appVersion: 1.1.39
+    created: "2026-09-01T20:38:43.582034577Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: ef950860385127adad1eb52e8a949e75296367edf86c35f2cc6c635eb338fd0b
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.5.1/filebeat-1.5.1.tgz
+    version: 1.5.1
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: added
+          description: "The Deployment supports 10x. It now carries the licence, the engine environment, the engine-aware probes and 10x wiring in its default filebeatConfig. Until now it carried none of them, so an install with tenx.enabled at its default of true crash-looped from the first second: the engine fell back to the image's limited key, failed the licence gate and took the container down through the entrypoint's pipefail. Verified on a cluster, 188 of 188 generated events returned through the engine carrying tenx_hash."
+        - kind: added
+          description: "Chart CI installs with the engine running. ci/ct-values.yaml sets tenx.enabled=true and the lint-test workflow feeds a licence from the TENX_LICENSE_JWT repository secret with --set-file, so 'ct install' can fail on a broken engine. Every previous run pinned tenx.enabled=false. Fork pull requests, which cannot read secrets, install with the engine off and print a warning that says so."
+        - kind: added
+          description: "ci/ct-deployment-values.yaml, so 'ct install' exercises the Deployment as well as the DaemonSet."
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart set only TENX_API_KEY, which nothing reads, so no chart install could start the engine: it exited 1 on 'metricOutput(Log10xMetricRegistryFactory) requires a license' and the entrypoint's pipefail took the container down with it."
+        - kind: added
+          description: "The liveness and readiness probes observe the 10x engine: the process exists, it is not stopped or a zombie, its stdin is still Filebeat's stdout, and its cumulative CPU is advancing. What this catches that nothing else does is a FROZEN engine, which is silent: SIGSTOP leaves the pid in the table, nothing breaks the pipe, and the old Filebeat-only probes held the pod 1/1 Ready for 150 seconds while 5.2MB backed up. Measured on 1.1.39, the engine-aware probe fails 22 seconds after the freeze with \"engine pid 12 is stopped (state 'T'): frozen, not running\" and the container restarts at 29 seconds. A dead engine is a different case and needs no probe: the entrypoint runs the pipeline under 'set -euo pipefail', so an engine that exits takes the container down in about three seconds on its own. Turn off with tenx.healthcheck.enabled=false."
+        - kind: changed
+          description: "The engine environment, volumes, mounts and git init container are defined once in _tenx.tpl and included by both workloads, so the DaemonSet and the Deployment cannot drift apart again."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They used to set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.variant defaults to 'native'. The 'jit' variant is retired: it was built from the jpackage 'edge' flavor, which has been removed. Existing -jit tags remain pullable and 'jit' remains an accepted value for anyone pinned to one."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: fixed
+          description: "TENX_RUN_ARGS launches '@run/input/forwarder/filebeat', the folder form the image itself defaults to. The previous '@run/input/forwarder/filebeat/receive/config.yaml' names a path the config tree no longer has, and the engine aborted at startup with 'error expanding launch macro'."
+        - kind: fixed
+          description: "tenx.inputs points at conf/tenxNix.yml, the readback snippet the image actually ships and the same file the engine reads the socket address from. The receive/ and optimize/ folders it named were removed from log-10x/modules."
+        - kind: fixed
+          description: "tenx.processors.optimize points at tenx-receive.js. tenx-optimize.js was deleted from log-10x/modules; optimize mode is receive plus the receiverOptimize env var, not a different script."
+        - kind: changed
+          description: "Report mode launches the Receiver in read-only mode (@apps/receiver receiverReadOnly true)."
+        - kind: changed
+          description: "Sample values file is filebeat-receive.yaml for the default filter mode."
+    apiVersion: v2
+    appVersion: 1.1.39
     created: "2026-08-03T22:23:32.542476941Z"
     description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
     digest: 62d0873d70927596ffc721ea1c0f1a92d1dbb9fa40c5838f0a13a168cbd4adc5
@@ -574,6 +628,60 @@ entries:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-0.2.1/filebeat-0.2.1.tgz
     version: 0.2.1
   logstash:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "The sidecar's socket settings travel as TENX_LOGSTASH_* environment variables. The chart no longer renders a ConfigMap holding a second copy of the image's run/input/forwarder/logstash/config.yaml, which drifted the moment the shipped file gained a key with nothing to detect it. Requires an engine image whose config tree resolves those variables through TenXEnv.get."
+        - kind: added
+          description: "The 10x sidecar has probes. It had none, so the kubelet marked the container Ready the moment it was created and never looked again: an install whose licence was the string not-a-jwt returned rc=0 with the pod 2/2 Running, the tenx container ready=true, restarts=0, and the engine never launched. A frozen engine (SIGSTOP) held that same 2/2 Running with zero restarts for as long as it was watched, while events entering the sidecar stopped coming back."
+        - kind: added
+          description: "readinessProbe fails unless the engine itself owns a listening socket on tenx.inputPort. readStream(stream:logstash) binds that port at the end of pipeline construction, after the licence is verified, so an engine that cannot licence itself or load its config never passes. The socket has to be one of pid 1's own descriptors, because Logstash shares the network namespace and a bare port check would pass on the wrong process."
+        - kind: added
+          description: "livenessProbe fails on an engine that is in the process table and doing nothing: state T or t, Z or X, or no cumulative CPU for tenx.healthcheck.stallSeconds. That is the one broken state the container survives, since a dead engine is pid 1 and takes the container with it."
+        - kind: added
+          description: "startupProbe reports the wait for Logstash to bind. While it is pending the kubelet runs neither of the other two probes, so a slow peer cannot get the container restarted. Its failureThreshold is derived from tenx.waitForLogstash.timeoutSeconds plus tenx.healthcheck.startupGraceSeconds rather than fixed, so raising the wait cannot leave a container the kubelet kills before its peer is up."
+        - kind: added
+          description: "charts/logstash/ci/ct-values.yaml turns the engine on for chart CI. The chart had no ci/ file, so every ct install ran with tenx.enabled=false and no CI run had ever started the engine."
+        - kind: added
+          description: "The chart can licence the engine. tenx.licenseJwt or tenx.licenseSecret feed TENX_LICENSE_FILE (default) or TENX_LICENSE_KEY. Before this the chart had no licence wiring at all, so every install crashed the sidecar on 'readStream(stream:logstash) requires a license' while Logstash kept shipping raw."
+        - kind: added
+          description: "The chart renders the two Logstash pipelines the round trip needs: tenx-ingest.conf hands events to the sidecar, tenx-destinations.conf binds the return port and receives them back, and pipelines.yml points at both. Sources, filters and destinations are values (tenx.pipeline.*). Set tenx.pipeline.managed=false to supply your own. Before this the chart shipped neither, so nothing bound the return port and the sidecar exited 1 with nothing to connect to."
+        - kind: added
+          description: "The sidecar waits for the Logstash tcp input to bind before launching the engine. Kubernetes starts both containers at once and Logstash needs most of a minute to boot, so the engine used to reach an unbound port and exit 1 into CrashLoopBackOff. Turn off with tenx.waitForLogstash.enabled=false."
+        - kind: fixed
+          description: "The sidecar listens on 5046 by default (tenx.inputPort), not 5044. The stock logstash image binds 5044 for its own beats input and both containers share one network namespace, so the sidecar died on 'Address already in use'. tenx.outputPort, tenx.outputHost, tenx.inputMessageField and tenx.outputEncodeType are configurable too, and a render where inputPort equals outputPort fails instead of shipping a guaranteed collision."
+        - kind: added
+          description: "A ConfigMap replaces the image's run/input/forwarder/logstash/config.yaml with the chart's socket settings. That file is the only thing the engine reads for them: the launch macro expands it into CLI options itself, so passing logstashInputPort again is 'option logstashInputPort (string) should be specified only once' and exit 2, and the documented overrideKey/overrideValue form fails the same way. Skipped when tenx.config.git or tenx.config.volume supplies the config tree."
+        - kind: fixed
+          description: "tenx.image.tag defaults to .Chart.AppVersion, the engine release the chart is built against. It defaulted to .Chart.Version, so a chart advertising appVersion 1.1.39 deployed log10x/pipeline-10x:1.0.21."
+        - kind: deprecated
+          description: "tenx.apiKey and tenx.license. They set TENX_API_KEY, an environment variable absent from both the image config tree and the engine binary. When no licence is configured the chart now uses their value as the licence JWT so existing installs start working."
+        - kind: changed
+          description: "tenx.kind values are 'receive', 'optimize', 'report'. The default filter mode is 'receive'."
+        - kind: changed
+          description: "Sidecar launches @apps/receiver against @run/input/forwarder/logstash in all modes. Report mode adds receiverReadOnly true."
+    apiVersion: v2
+    appVersion: 1.1.45
+    created: "2026-09-01T20:38:43.768156391Z"
+    deprecated: true
+    description: A Helm chart for Kubernetes for Logstash + 10x Observability engine
+    digest: fe9d7d524e18ab2a04a554b3daaebb89b3d1bba6d5ed7c2b84819c5b3be9114a
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - logstash
+    name: logstash
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/logstash
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-1.3.1/logstash-1.3.1.tgz
+    version: 1.3.1
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -1182,4 +1290,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-05T00:53:26.340330397Z"
+generated: "2026-09-01T20:38:43.768392873Z"
