@@ -15,7 +15,7 @@
           "enum": ["jit", "native"]
         },
         "licenseJwt": {
-          "description": "10x licence JWT. The engine does not start without a licence. Download from https://console.log10x.com",
+          "description": "10x licence JWT. Optional: without one the engine runs on its built-in 30-day evaluation licence. See https://doc.log10x.com/manage/license/",
           "type": "string"
         },
         "licenseSecret": {

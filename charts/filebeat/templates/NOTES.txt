@@ -9,7 +9,7 @@ WARNING: no 10x licence was configured.
   prints
 
     metricOutput(Log10xMetricRegistryFactory) requires a license.
-    Get yours at https://console.log10x.com
+    Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
 
   and exits 1. Filebeat keeps running, so the pod stays up and ships raw.
 
