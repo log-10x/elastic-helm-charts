@@ -65,7 +65,7 @@ tenx:
 |------|-------------|
 | `report` | Read-only observation. Emits cost and usage metrics without modifying the event stream |
 | `receive` | Filter mode. Drops events per local or centralized policy |
-| `optimize` | Filter and losslessly compact events for 50-65% volume reduction |
+| `optimize` | Filter and losslessly compact events |
 
 ### Licence
 
@@ -302,4 +302,4 @@ See the [samples](../../samples/) directory for example configurations:
 
 This chart is licensed under the Apache License 2.0.
 
-**Note:** The Log10x engine requires a commercial license. See [Log10x Pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=inline) for details.
+**Note:** The Log10x engine runs on the built-in Free tier on up to 10 nodes; above 10 nodes it takes a paid license. See [Log10x Pricing](https://www.log10x.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=elastic-helm-charts&utm_content=inline) for details.

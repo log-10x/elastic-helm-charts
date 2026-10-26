@@ -184,7 +184,7 @@ tenx:
 
   # 10x Receiver mode. One of:
   #   - "receive"  : filter mode, drops events per local/centralized policy
-  #   - "optimize" : filter and losslessly compact events for 50-65% volume reduction
+  #   - "optimize" : filter and losslessly compact events
   #   - "report"   : read-only observation, emits metrics without modifying the event stream
   kind: "receive"
 
