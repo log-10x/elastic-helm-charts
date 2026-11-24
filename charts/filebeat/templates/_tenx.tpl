@@ -145,8 +145,7 @@ the first second with tenx.enabled left at its default of true.
 {{- define "tenx.env" -}}
 # The engine reads exactly one credential, the licence JWT, from
 # TENX_LICENSE_FILE or TENX_LICENSE_KEY. Optional: without one the engine runs
-# on its built-in 30-day evaluation licence (10 nodes, airgapped), so an
-# unlicensed install starts and evaluates rather than crash-looping.
+# on its built-in Free tier (up to 10 nodes, airgapped).
 {{- if eq (include "tenx.licenseConfigured" .) "true" }}
 {{- if eq (include "tenx.licenseDelivery" .) "file" }}
 - name: TENX_LICENSE_FILE
