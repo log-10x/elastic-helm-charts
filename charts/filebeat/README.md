@@ -69,28 +69,8 @@ tenx:
 
 ### Licence
 
-The licence is required. It is not a premium-feature switch: it is checked while
-the receiver pipeline is being built, before a single event is read, and two
-units of the default pipeline demand it.
-
-```
-metricOutput(Log10xMetricRegistryFactory)   the metric surface
-logOutput(run/modules/output/event/unix)    the write-back socket to Filebeat
-```
-
-Because the write-back path is behind the same gate, an unlicensed engine cannot
-even hand events back. It prints
-
-```
-metricOutput(Log10xMetricRegistryFactory) requires a license.
-Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
-```
-
-and exits 1. The container goes with it in about three seconds, because the
-image's entrypoint runs `set -euo pipefail` around
-`exec filebeat "$@" 2>&1 | tenx-edge run ...`, so an unlicensed install
-crash-loops rather than shipping raw. The licence baked into the public image is
-of type `limited` and does not satisfy this gate.
+The licence is optional. Without one the engine runs on its built-in Free tier
+on up to 10 nodes, airgapped; above 10 nodes it takes a paid licence.
 
 Supply it in one of two ways.
 
@@ -174,7 +154,7 @@ becomes invisible to Kubernetes again.
 | `tenx.enabled` | Enable Log10x engine | `true` |
 | `tenx.variant` | Image tag suffix on `log10x/filebeat-10x:<appVersion>-<variant>`. Must be `jit` or `native`; any other value, or null, fails the render. `native` is the only variant still built; `jit` is retired. | `native` |
 | `tenx.debug` | Enable debug logging | `false` |
-| `tenx.licenseJwt` | Log10x licence JWT. Optional: without one the engine runs on its built-in 30-day evaluation licence. When set, the chart stores it in a Secret. | `""` |
+| `tenx.licenseJwt` | Log10x licence JWT. Optional: without one the engine runs on its built-in Free tier (up to 10 nodes). When set, the chart stores it in a Secret. | `""` |
 | `tenx.licenseSecret` | Name of an existing Secret holding the licence. Takes precedence over `licenseJwt`. | `""` |
 | `tenx.licenseSecretKey` | Key inside the licence Secret | `license-jwt` |
 | `tenx.licenseDelivery` | `file` projects the Secret and sets `TENX_LICENSE_FILE`; `env` injects `TENX_LICENSE_KEY` | `file` |

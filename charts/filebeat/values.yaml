@@ -30,47 +30,19 @@ tenx:
   debug: false
 
   # ===========================================================================
-  # LICENCE. REQUIRED. Without one the 10x Receiver does not start at all.
+  # LICENCE. Optional.
   # ===========================================================================
   #
-  # The licence is not an "encode only" or "premium feature" gate. It is checked
-  # while the pipeline is being built, before any event is read, and two units
-  # of the default receiver pipeline demand it:
-  #
-  #   metricOutput(Log10xMetricRegistryFactory)   the metric surface
-  #   logOutput(run/modules/output/event/unix)    the WRITE-BACK path, i.e. the
-  #                                               socket that returns events to
-  #                                               Filebeat
-  #
-  # So an unlicensed engine cannot even hand events back. With no licence the
-  # engine prints
-  #
-  #   metricOutput(Log10xMetricRegistryFactory) requires a license.
-  #   Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
-  #
-  # and exits 1. The container goes with it in about three seconds: the image's
-  # docker-entrypoint runs
-  #
-  #   set -euo pipefail
-  #   exec filebeat "$@" 2>&1 | $TENX_BIN run ...
-  #
-  # so the engine's exit status fails the pipeline and PID 1 leaves. An
-  # unlicensed pod therefore crash-loops loudly, which is the one failure mode
-  # nobody needs a probe for. It does not sit Ready with a dead engine.
-  #
-  # The image ships a fallback TENX_LICENSE_KEY of type "limited" (tenant
-  # "public-image-limited"). It does NOT satisfy this gate: a container started
-  # with nothing but the baked-in key exits 1 on the message above. Treat the
-  # licence as mandatory input to every install.
+  # Without one the engine runs on its built-in Free tier (up to 10 nodes,
+  # airgapped). Above 10 nodes a paid licence applies:
+  # https://doc.log10x.com/manage/license/
   #
   # Supply it in ONE of three ways:
   #
   #   1. licenseJwt      the token itself. The chart puts it in a Secret.
   #   2. licenseSecret   the name of a Secret you already manage.
-  #   3. neither         only valid if you inject TENX_LICENSE_KEY or
-  #                      TENX_LICENSE_FILE yourself through extraEnvs/envFrom.
-  #                      The chart cannot see that, so it does not fail the
-  #                      render, and you own the outcome.
+  #   3. extraEnvs       TENX_LICENSE_KEY or TENX_LICENSE_FILE set by you
+  #                      through extraEnvs or envFrom.
   #
   # The signed JWT; see https://doc.log10x.com/manage/license/
   # Leave empty and set licenseSecret if the token is managed elsewhere.
