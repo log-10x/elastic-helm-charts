@@ -3,6 +3,36 @@ entries:
   filebeat:
   - annotations:
       artifacthub.io/changes: |
+        - kind: changed
+          description: "The default image is log10x/filebeat-10x:1.1.183-native, engine release 1.1.183."
+        - kind: changed
+          description: "The licence text describes the built-in Free tier: with no licence the engine runs on up to 10 nodes, airgapped."
+    apiVersion: v2
+    appVersion: 1.1.183
+    created: "2026-11-24T22:39:33.948184916Z"
+    description: A Helm chart for Kubernetes for Filebeat + 10x Observability engine
+    digest: c35aefeb1fa937f37866c7f714b1d14cf9805b20823ebff14e772fa86664d1e1
+    home: https://github.com/log-10x/elastic-helm-charts
+    icon: https://raw.githubusercontent.com/log-10x/elastic-helm-charts/main/icon.png
+    keywords:
+    - 10x
+    - log10x
+    - logging
+    - elastic
+    - filebeat
+    maintainers:
+    - email: engineering@log10x.com
+      name: Log10x
+    name: filebeat
+    sources:
+    - https://github.com/log-10x/elastic-helm-charts
+    - https://github.com/log-10x/docker-images
+    - https://github.com/elastic/beats
+    urls:
+    - https://github.com/log-10x/elastic-helm-charts/releases/download/filebeat-1.5.3/filebeat-1.5.3.tgz
+    version: 1.5.3
+  - annotations:
+      artifacthub.io/changes: |
         - kind: added
           description: "The Deployment supports 10x. It now carries the licence, the engine environment, the engine-aware probes and 10x wiring in its default filebeatConfig. Until now it carried none of them, so an install with tenx.enabled at its default of true crash-looped from the first second: the engine fell back to the image's limited key, failed the licence gate and took the container down through the entrypoint's pipefail. Verified on a cluster, 188 of 188 generated events returned through the engine carrying tenx_hash."
         - kind: added
@@ -1340,4 +1370,4 @@ entries:
     urls:
     - https://github.com/log-10x/elastic-helm-charts/releases/download/logstash-0.2.1/logstash-0.2.1.tgz
     version: 0.2.1
-generated: "2026-10-26T23:32:17.992727554Z"
+generated: "2026-11-24T22:39:33.948318174Z"
