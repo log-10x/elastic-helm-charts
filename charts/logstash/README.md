@@ -37,9 +37,8 @@ Enable the Log10x sidecar by configuring the `tenx` section in your values file:
 ```yaml
 tenx:
   enabled: true
-  # REQUIRED. Without it the sidecar exits 1 on
-  # "readStream(stream:logstash) requires a license" while Logstash keeps
-  # shipping raw. Use licenseSecret instead to keep the token out of git.
+  # Optional: without it the engine runs on its built-in Free tier (up to 10
+  # nodes). Use licenseSecret instead to keep the token out of git.
   licenseJwt: "YOUR-LICENSE-JWT"
   kind: "receive"  # Options: report, receive, optimize
   runtimeName: "my-logstash-instance"

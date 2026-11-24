@@ -404,11 +404,8 @@ spec:
         env:
 {{ include "tenx.socketEnv" . | indent 10 }}
           # The engine reads exactly one credential, the licence JWT, from
-          # TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the Receiver
-          # pipeline fails to build and the sidecar exits 1 on
-          # "readStream(stream:logstash) requires a license" while Logstash
-          # carries on shipping raw. The chart used to set only TENX_API_KEY,
-          # which nothing reads.
+          # TENX_LICENSE_FILE or TENX_LICENSE_KEY. Without it the engine runs
+          # on its built-in Free tier (up to 10 nodes, airgapped).
           {{- if eq (include "tenx.licenseConfigured" .) "true" }}
           {{- if eq (include "tenx.licenseDelivery" .) "file" }}
           - name: TENX_LICENSE_FILE

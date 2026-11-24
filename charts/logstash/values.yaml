@@ -531,30 +531,19 @@ tenx:
       }
 
   # ===========================================================================
-  # LICENCE. REQUIRED. Without one the 10x Receiver does not start at all.
+  # LICENCE. Optional.
   # ===========================================================================
   #
-  # The licence is checked while the pipeline is being built, before any event
-  # is read, and the Logstash read stream is one of the units that demands it.
-  # With no licence the sidecar prints
-  #
-  #   readStream(stream:logstash) requires a license.
-  #   Optional: without one the engine runs on its built-in 30-day evaluation licence. Production: https://doc.log10x.com/manage/license/
-  #
-  # and exits 1, WHILE LOGSTASH KEEPS RUNNING and keeps shipping raw.
-  #
-  # The image ships a fallback TENX_LICENSE_KEY of type "limited" (tenant
-  # "public-image-limited"). It does not satisfy this gate. Treat the licence as
-  # mandatory input to every install.
+  # Without one the engine runs on its built-in Free tier (up to 10 nodes,
+  # airgapped). Above 10 nodes a paid licence applies:
+  # https://doc.log10x.com/manage/license/
   #
   # Supply it in one of three ways:
   #
   #   1. licenseJwt      the token itself. The chart puts it in a Secret.
   #   2. licenseSecret   the name of a Secret you already manage.
-  #   3. neither         only valid if you inject TENX_LICENSE_KEY or
-  #                      TENX_LICENSE_FILE yourself through extraEnvs/envFrom.
-  #                      The chart cannot see that, so it does not fail the
-  #                      render, and you own the outcome.
+  #   3. extraEnvs       TENX_LICENSE_KEY or TENX_LICENSE_FILE set by you
+  #                      through extraEnvs or envFrom.
   #
   # The signed JWT; see https://doc.log10x.com/manage/license/
   #
